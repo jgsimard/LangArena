@@ -2592,6 +2592,26 @@ class CacheSimulation extends Benchmark {
   String get benchmarkName => 'Etc::CacheSimulation';
 }
 
+const CHAR_EOF = '\u0000';
+const CHAR_PLUS = '+';
+const CHAR_MINUS = '-';
+const CHAR_STAR = '*';
+const CHAR_SLASH = '/';
+const CHAR_PERCENT = '%';
+const CHAR_LPAREN = '(';
+const CHAR_RPAREN = ')';
+const CHAR_EQUALS = '=';
+const CHAR_ZERO = '0';
+const CHAR_NINE = '9';
+const CHAR_A_LOWER = 'a';
+const CHAR_Z_LOWER = 'z';
+const CHAR_A_UPPER = 'A';
+const CHAR_Z_UPPER = 'Z';
+const CHAR_SPACE = ' ';
+const CHAR_TAB = '\t';
+const CHAR_NEWLINE = '\n';
+const CHAR_CR = '\r';
+
 abstract class Node2 {}
 
 class NumberNode extends Node2 {
@@ -2626,27 +2646,32 @@ class Parser2 {
   final expressions = <Node2>[];
 
   Parser2(this.input) {
-    currentChar = input.isNotEmpty ? input[0] : '\0';
+    currentChar = input.isNotEmpty ? input[0] : CHAR_EOF;
   }
 
   void parse() {
-    while (pos < input.length) {
+    while (currentChar != CHAR_EOF) {
       skipWhitespace();
-      if (pos >= input.length) break;
+      if (currentChar == CHAR_EOF) break;
 
       final expr = parseExpression();
       expressions.add(expr);
+
+      skipWhitespace();
+      while (currentChar == CHAR_NEWLINE) {
+        advance();
+        skipWhitespace();
+      }
     }
   }
 
   Node2 parseExpression() {
     var node = parseTerm();
 
-    while (pos < input.length) {
+    while (true) {
       skipWhitespace();
-      if (pos >= input.length) break;
 
-      if (currentChar == '+' || currentChar == '-') {
+      if (currentChar == CHAR_PLUS || currentChar == CHAR_MINUS) {
         final op = currentChar;
         advance();
         final right = parseTerm();
@@ -2662,11 +2687,12 @@ class Parser2 {
   Node2 parseTerm() {
     var node = parseFactor();
 
-    while (pos < input.length) {
+    while (true) {
       skipWhitespace();
-      if (pos >= input.length) break;
 
-      if (currentChar == '*' || currentChar == '/' || currentChar == '%') {
+      if (currentChar == CHAR_STAR ||
+          currentChar == CHAR_SLASH ||
+          currentChar == CHAR_PERCENT) {
         final op = currentChar;
         advance();
         final right = parseFactor();
@@ -2681,33 +2707,30 @@ class Parser2 {
 
   Node2 parseFactor() {
     skipWhitespace();
-    if (pos >= input.length) {
-      return NumberNode(0);
-    }
 
-    final char = currentChar;
-
-    if (_isDigit(char)) {
+    if (_isDigit(currentChar)) {
       return parseNumber();
-    } else if (_isLetter(char)) {
+    } else if (_isLetter(currentChar)) {
       return parseVariable();
-    } else if (char == '(') {
+    } else if (currentChar == CHAR_LPAREN) {
       advance();
       final node = parseExpression();
       skipWhitespace();
-      if (currentChar == ')') {
+      if (currentChar == CHAR_RPAREN) {
         advance();
       }
       return node;
     } else {
+      advance();
       return NumberNode(0);
     }
   }
 
   NumberNode parseNumber() {
     var value = 0;
-    while (pos < input.length && _isDigit(currentChar)) {
-      value = value * 10 + (currentChar.codeUnitAt(0) - 48);
+    while (_isDigit(currentChar)) {
+      value =
+          value * 10 + (currentChar.codeUnitAt(0) - CHAR_ZERO.codeUnitAt(0));
       advance();
     }
     return NumberNode(value);
@@ -2715,15 +2738,14 @@ class Parser2 {
 
   Node2 parseVariable() {
     final start = pos;
-    while (pos < input.length &&
-        (_isLetter(currentChar) || _isDigit(currentChar))) {
+    while (_isLetter(currentChar) || _isDigit(currentChar)) {
       advance();
     }
 
     final varName = input.substring(start, pos);
 
     skipWhitespace();
-    if (currentChar == '=') {
+    if (currentChar == CHAR_EQUALS) {
       advance();
       final expr = parseExpression();
       return AssignmentNode(varName, expr);
@@ -2735,27 +2757,28 @@ class Parser2 {
   void advance() {
     pos++;
     if (pos >= input.length) {
-      currentChar = '\0';
+      currentChar = CHAR_EOF;
     } else {
       currentChar = input[pos];
     }
   }
 
   void skipWhitespace() {
-    while (pos < input.length && _isWhitespace(currentChar)) {
+    while (_isWhitespace(currentChar)) {
       advance();
     }
   }
 
-  bool _isDigit(String ch) => ch.codeUnitAt(0) >= 48 && ch.codeUnitAt(0) <= 57;
-
-  bool _isLetter(String ch) {
-    final code = ch.codeUnitAt(0);
-    return (code >= 65 && code <= 90) || (code >= 97 && code <= 122);
-  }
-
+  bool _isDigit(String ch) =>
+      ch.codeUnitAt(0) >= CHAR_ZERO.codeUnitAt(0) &&
+      ch.codeUnitAt(0) <= CHAR_NINE.codeUnitAt(0);
+  bool _isLetter(String ch) =>
+      (ch.codeUnitAt(0) >= CHAR_A_LOWER.codeUnitAt(0) &&
+          ch.codeUnitAt(0) <= CHAR_Z_LOWER.codeUnitAt(0)) ||
+      (ch.codeUnitAt(0) >= CHAR_A_UPPER.codeUnitAt(0) &&
+          ch.codeUnitAt(0) <= CHAR_Z_UPPER.codeUnitAt(0));
   bool _isWhitespace(String ch) =>
-      ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r';
+      ch == CHAR_SPACE || ch == CHAR_TAB || ch == CHAR_NEWLINE || ch == CHAR_CR;
 }
 
 class CalculatorAst extends Benchmark {

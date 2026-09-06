@@ -5,6 +5,26 @@ import helper
 import strings
 import math
 
+const char_eof = `\0`
+const char_plus = `+`
+const char_minus = `-`
+const char_star = `*`
+const char_slash = `/`
+const char_percent = `%`
+const char_lparen = `(`
+const char_rparen = `)`
+const char_equals = `=`
+const char_zero = `0`
+const char_nine = `9`
+const char_a_lower = `a`
+const char_z_lower = `z`
+const char_a_upper = `A`
+const char_z_upper = `Z`
+const char_space = ` `
+const char_tab = `\t`
+const char_newline = `\n`
+const char_cr = `\r`
+
 pub enum NodeType {
 	number
 	variable
@@ -71,50 +91,44 @@ struct Parser {
 	input string
 mut:
 	pos          int
+	len          int
 	current_char u8
-	chars        []u8
 	expressions  []&AstNode
 }
 
 fn new_parser(input_str string) Parser {
-	mut chars := []u8{cap: input_str.len}
-	for c in input_str {
-		chars << u8(c)
-	}
-
-	mut current_char := u8(0)
-	if chars.len > 0 {
-		current_char = chars[0]
+	mut current_char := char_eof
+	if input_str.len > 0 {
+		current_char = input_str[0]
 	}
 
 	return Parser{
 		input:        input_str
 		pos:          0
+		len:          input_str.len
 		current_char: current_char
-		chars:        chars
 	}
 }
 
 fn (mut p Parser) advance() {
 	p.pos += 1
-	if p.pos >= p.chars.len {
-		p.current_char = 0
+	if p.pos >= p.len {
+		p.current_char = char_eof
 	} else {
-		p.current_char = p.chars[p.pos]
+		p.current_char = p.input[p.pos]
 	}
 }
 
 fn (mut p Parser) skip_whitespace() {
-	for p.current_char != 0 && (p.current_char == 32 || p.current_char == 9
-		|| p.current_char == 10 || p.current_char == 13) {
+	for p.is_whitespace(p.current_char) {
 		p.advance()
 	}
 }
 
 fn (mut p Parser) parse_number() &AstNode {
 	mut v := i64(0)
-	for p.current_char != 0 && p.current_char >= `0` && p.current_char <= `9` {
-		v = v * 10 + i64(p.current_char - `0`)
+	for p.is_digit(p.current_char) {
+		v = v * 10 + i64(p.current_char - char_zero)
 		p.advance()
 	}
 	return &AstNode{
@@ -125,16 +139,14 @@ fn (mut p Parser) parse_number() &AstNode {
 
 fn (mut p Parser) parse_variable() &AstNode {
 	start := p.pos
-	for p.current_char != 0 && ((p.current_char >= `a` && p.current_char <= `z`)
-		|| (p.current_char >= `A` && p.current_char <= `Z`)
-		|| (p.current_char >= `0` && p.current_char <= `9`)) {
+	for p.is_letter(p.current_char) || p.is_digit(p.current_char) {
 		p.advance()
 	}
 
 	var_name := p.input.substr(start, p.pos)
 
 	p.skip_whitespace()
-	if p.current_char == `=` {
+	if p.current_char == char_equals {
 		p.advance()
 		expr := p.parse_expression()
 		return &AstNode{
@@ -154,32 +166,26 @@ fn (mut p Parser) parse_variable() &AstNode {
 
 fn (mut p Parser) parse_factor() &AstNode {
 	p.skip_whitespace()
-	if p.current_char == 0 {
-		return &AstNode{
-			typ:    .number
-			number: Number{0}
-		}
-	}
 
-	if p.current_char >= `0` && p.current_char <= `9` {
+	if p.is_digit(p.current_char) {
 		return p.parse_number()
 	}
 
-	if (p.current_char >= `a` && p.current_char <= `z`)
-		|| (p.current_char >= `A` && p.current_char <= `Z`) {
+	if p.is_letter(p.current_char) {
 		return p.parse_variable()
 	}
 
-	if p.current_char == `(` {
+	if p.current_char == char_lparen {
 		p.advance()
 		node := p.parse_expression()
 		p.skip_whitespace()
-		if p.current_char == `)` {
+		if p.current_char == char_rparen {
 			p.advance()
 		}
 		return node
 	}
 
+	p.advance()
 	return &AstNode{
 		typ:    .number
 		number: Number{0}
@@ -191,11 +197,9 @@ fn (mut p Parser) parse_term() &AstNode {
 
 	for {
 		p.skip_whitespace()
-		if p.current_char == 0 {
-			break
-		}
 
-		if p.current_char == `*` || p.current_char == `/` || p.current_char == `%` {
+		if p.current_char == char_star || p.current_char == char_slash
+			|| p.current_char == char_percent {
 			op := p.current_char.ascii_str()
 			p.advance()
 			right := p.parse_factor()
@@ -220,11 +224,8 @@ fn (mut p Parser) parse_expression() &AstNode {
 
 	for {
 		p.skip_whitespace()
-		if p.current_char == 0 {
-			break
-		}
 
-		if p.current_char == `+` || p.current_char == `-` {
+		if p.current_char == char_plus || p.current_char == char_minus {
 			op := p.current_char.ascii_str()
 			p.advance()
 			right := p.parse_term()
@@ -246,14 +247,33 @@ fn (mut p Parser) parse_expression() &AstNode {
 
 fn (mut p Parser) parse() []&AstNode {
 	p.expressions.clear()
-	for p.current_char != 0 {
+	for p.current_char != char_eof {
 		p.skip_whitespace()
-		if p.current_char == 0 {
+		if p.current_char == char_eof {
 			break
 		}
 		p.expressions << p.parse_expression()
+
+		p.skip_whitespace()
+		for p.current_char == char_newline {
+			p.advance()
+			p.skip_whitespace()
+		}
 	}
 	return p.expressions.clone()
+}
+
+fn (p Parser) is_digit(byte u8) bool {
+	return byte >= char_zero && byte <= char_nine
+}
+
+fn (p Parser) is_letter(byte u8) bool {
+	return (byte >= char_a_lower && byte <= char_z_lower)
+		|| (byte >= char_a_upper && byte <= char_z_upper)
+}
+
+fn (p Parser) is_whitespace(byte u8) bool {
+	return byte == char_space || byte == char_tab || byte == char_newline || byte == char_cr
 }
 
 fn generate_random_program(n i64) string {

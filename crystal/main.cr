@@ -2155,37 +2155,63 @@ module Calculator
     end
 
     class Parser
+      CHAR_EOF     = '\0'
+      CHAR_PLUS    = '+'
+      CHAR_MINUS   = '-'
+      CHAR_STAR    = '*'
+      CHAR_SLASH   = '/'
+      CHAR_PERCENT = '%'
+      CHAR_LPAREN  = '('
+      CHAR_RPAREN  = ')'
+      CHAR_EQUALS  = '='
+      CHAR_ZERO    = '0'
+      CHAR_NINE    = '9'
+      CHAR_A_LOWER = 'a'
+      CHAR_Z_LOWER = 'z'
+      CHAR_A_UPPER = 'A'
+      CHAR_Z_UPPER = 'Z'
+      CHAR_SPACE   = ' '
+      CHAR_TAB     = '\t'
+      CHAR_NEWLINE = '\n'
+      CHAR_CR      = '\r'
+
       @input : String
       @pos : Int32
       @len : Int32
-      getter current_char : Char
-      @chars : Array(Char)
+      @current : Char
 
       getter expressions
 
       def initialize(@input)
         @pos = 0
-        @chars = @input.chars
-        @current_char = @chars.size > 0 ? @chars[0] : '\0'
         @len = @input.size
+        @current = @len > 0 ? @input[0] : CHAR_EOF
         @expressions = Array(Node).new
       end
 
       def parse
-        while @pos < @len
+        while @current != CHAR_EOF
+          skip_whitespace
+          break if @current == CHAR_EOF
+
           @expressions << parse_expression
+
+          skip_whitespace
+          while @current == CHAR_NEWLINE
+            advance
+            skip_whitespace
+          end
         end
       end
 
       def parse_expression : Node
         node = parse_term
 
-        while @pos < @len
+        while true
           skip_whitespace
-          break if @pos >= @len
 
-          if current_char == '+' || current_char == '-'
-            op = current_char
+          if @current == CHAR_PLUS || @current == CHAR_MINUS
+            op = @current
             advance
             right = parse_term
             node = BinaryOp.new(op, node, right)
@@ -2200,12 +2226,11 @@ module Calculator
       def parse_term : Node
         node = parse_factor
 
-        while @pos < @len
+        while true
           skip_whitespace
-          break if @pos >= @len
 
-          if current_char == '*' || current_char == '/' || current_char == '%'
-            op = current_char
+          if @current == CHAR_STAR || @current == CHAR_SLASH || @current == CHAR_PERCENT
+            op = @current
             advance
             right = parse_factor
             node = BinaryOp.new(op, node, right)
@@ -2219,31 +2244,29 @@ module Calculator
 
       def parse_factor : Node
         skip_whitespace
-        return Number.new(0) if @pos >= @len
 
-        case current_char
-        when '0'..'9'
+        if is_digit?(@current)
           parse_number
-        when 'a'..'z'
+        elsif is_letter?(@current)
           parse_variable
-        when '('
+        elsif @current == CHAR_LPAREN
           advance
           node = parse_expression
           skip_whitespace
-          if current_char == ')'
+          if @current == CHAR_RPAREN
             advance
           end
           node
         else
+          advance
           Number.new(0)
         end
       end
 
       def parse_number : Node
-        start = @pos
         v = 0_i64
-        while @pos < @len && current_char.ascii_number?
-          v = v &* 10 &+ @current_char.to_i64
+        while is_digit?(@current)
+          v = v &* 10 &+ (@current - CHAR_ZERO).to_i64
           advance
         end
         Number.new(v)
@@ -2251,13 +2274,13 @@ module Calculator
 
       def parse_variable : Node
         start = @pos
-        while @pos < @len && (current_char.ascii_letter? || current_char.ascii_number?)
+        while is_letter?(@current) || is_digit?(@current)
           advance
         end
         var_name = @input[start...@pos]
 
         skip_whitespace
-        if current_char == '='
+        if @current == CHAR_EQUALS
           advance
           expr = parse_expression
           return Assignment.new(var_name, expr)
@@ -2269,16 +2292,29 @@ module Calculator
       def advance
         @pos += 1
         if @pos >= @len
-          @current_char = '\0'
+          @current = CHAR_EOF
         else
-          @current_char = @chars[@pos]
+          @current = @input[@pos]
         end
       end
 
       def skip_whitespace
-        while @pos < @len && current_char.ascii_whitespace?
+        while is_whitespace?(@current)
           advance
         end
+      end
+
+      private def is_digit?(char : Char) : Bool
+        char >= CHAR_ZERO && char <= CHAR_NINE
+      end
+
+      private def is_letter?(char : Char) : Bool
+        (char >= CHAR_A_LOWER && char <= CHAR_Z_LOWER) ||
+          (char >= CHAR_A_UPPER && char <= CHAR_Z_UPPER)
+      end
+
+      private def is_whitespace?(char : Char) : Bool
+        char == CHAR_SPACE || char == CHAR_TAB || char == CHAR_NEWLINE || char == CHAR_CR
       end
     end
 

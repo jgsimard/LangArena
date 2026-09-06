@@ -2,12 +2,33 @@ import ../benchmark
 import ../helper
 import calculator_common
 
+const
+  CHAR_EOF = byte(0)
+  CHAR_PLUS = byte('+')
+  CHAR_MINUS = byte('-')
+  CHAR_STAR = byte('*')
+  CHAR_SLASH = byte('/')
+  CHAR_PERCENT = byte('%')
+  CHAR_LPAREN = byte('(')
+  CHAR_RPAREN = byte(')')
+  CHAR_EQUALS = byte('=')
+  CHAR_ZERO = byte('0')
+  CHAR_NINE = byte('9')
+  CHAR_A_LOWER = byte('a')
+  CHAR_Z_LOWER = byte('z')
+  CHAR_A_UPPER = byte('A')
+  CHAR_Z_UPPER = byte('Z')
+  CHAR_SPACE = byte(' ')
+  CHAR_TAB = byte('\t')
+  CHAR_NEWLINE = byte('\n')
+  CHAR_CR = byte('\r')
+
 type
   Parser = object
     input: string
     pos: int
-    currentChar: char
-    chars: seq[char]
+    len: int
+    currentByte: byte
     expressions: seq[Node]
 
   CalculatorAst* = ref object of Benchmark
@@ -20,25 +41,26 @@ proc newParser*(input: string): Parser =
   result = Parser(
     input: input,
     pos: 0,
-    chars: newSeq[char](),
+    len: input.len,
     expressions: @[]
   )
-  for c in input:
-    result.chars.add(c)
-  if result.chars.len > 0:
-    result.currentChar = result.chars[0]
+  if result.len > 0:
+    result.currentByte = byte(input[0])
   else:
-    result.currentChar = '\0'
+    result.currentByte = CHAR_EOF
 
 proc advance(p: var Parser) =
   inc p.pos
-  if p.pos >= p.chars.len:
-    p.currentChar = '\0'
+  if p.pos >= p.len:
+    p.currentByte = CHAR_EOF
   else:
-    p.currentChar = p.chars[p.pos]
+    p.currentByte = byte(p.input[p.pos])
+
+proc isWhitespace(byte: byte): bool =
+  byte == CHAR_SPACE or byte == CHAR_TAB or byte == CHAR_NEWLINE or byte == CHAR_CR
 
 proc skipWhitespace(p: var Parser) =
-  while p.currentChar != '\0' and p.currentChar in {' ', '\t', '\n', '\r'}:
+  while isWhitespace(p.currentByte):
     p.advance()
 
 proc parseNumber(p: var Parser): Node
@@ -51,26 +73,30 @@ proc parseTerm(p: var Parser): Node
 
 proc parseExpression(p: var Parser): Node
 
+proc isDigit(byte: byte): bool =
+  byte >= CHAR_ZERO and byte <= CHAR_NINE
+
+proc isLetter(byte: byte): bool =
+  (byte >= CHAR_A_LOWER and byte <= CHAR_Z_LOWER) or
+    (byte >= CHAR_A_UPPER and byte <= CHAR_Z_UPPER)
+
 proc parseNumber(p: var Parser): Node =
   var v: int64 = 0
-  while p.currentChar != '\0' and p.currentChar in '0'..'9':
-    v = v * 10 + (int(p.currentChar) - int('0'))
+  while isDigit(p.currentByte):
+    v = v * 10 + (int(p.currentByte) - int(CHAR_ZERO))
     p.advance()
   newNodeNumber(v)
 
 proc parseVariable(p: var Parser): Node =
   let startPos = p.pos
 
-  while p.currentChar != '\0' and (
-    (p.currentChar in 'a'..'z') or
-    (p.currentChar in 'A'..'Z') or
-    (p.currentChar in '0'..'9')):
+  while isLetter(p.currentByte) or isDigit(p.currentByte):
     p.advance()
 
   let varName = p.input.substr(startPos, p.pos - 1)
 
   p.skipWhitespace()
-  if p.currentChar == '=':
+  if p.currentByte == CHAR_EQUALS:
     p.advance()
     let expr = p.parseExpression()
     return newNodeAssignment(varName, expr)
@@ -79,23 +105,22 @@ proc parseVariable(p: var Parser): Node =
 
 proc parseFactor(p: var Parser): Node =
   p.skipWhitespace()
-  if p.currentChar == '\0':
-    return newNodeNumber(0)
 
-  if p.currentChar in '0'..'9':
+  if isDigit(p.currentByte):
     return p.parseNumber()
 
-  if (p.currentChar in 'a'..'z') or (p.currentChar in 'A'..'Z'):
+  if isLetter(p.currentByte):
     return p.parseVariable()
 
-  if p.currentChar == '(':
+  if p.currentByte == CHAR_LPAREN:
     p.advance()
     let node = p.parseExpression()
     p.skipWhitespace()
-    if p.currentChar == ')':
+    if p.currentByte == CHAR_RPAREN:
       p.advance()
     return node
 
+  p.advance()
   newNodeNumber(0)
 
 proc parseTerm(p: var Parser): Node =
@@ -103,11 +128,10 @@ proc parseTerm(p: var Parser): Node =
 
   while true:
     p.skipWhitespace()
-    if p.currentChar == '\0':
-      break
 
-    if p.currentChar in {'*', '/', '%'}:
-      let op = p.currentChar
+    if p.currentByte == CHAR_STAR or p.currentByte == CHAR_SLASH or
+        p.currentByte == CHAR_PERCENT:
+      let op = char(p.currentByte)
       p.advance()
       let right = p.parseFactor()
       node = newNodeBinaryOp(op, node, right)
@@ -121,11 +145,9 @@ proc parseExpression(p: var Parser): Node =
 
   while true:
     p.skipWhitespace()
-    if p.currentChar == '\0':
-      break
 
-    if p.currentChar in {'+', '-'}:
-      let op = p.currentChar
+    if p.currentByte == CHAR_PLUS or p.currentByte == CHAR_MINUS:
+      let op = char(p.currentByte)
       p.advance()
       let right = p.parseTerm()
       node = newNodeBinaryOp(op, node, right)
@@ -137,13 +159,18 @@ proc parseExpression(p: var Parser): Node =
 proc parse*(p: var Parser): seq[Node] =
   p.expressions = @[]
 
-  while p.currentChar != '\0':
+  while p.currentByte != CHAR_EOF:
     p.skipWhitespace()
-    if p.currentChar == '\0':
+    if p.currentByte == CHAR_EOF:
       break
 
     let expr = p.parseExpression()
     p.expressions.add(expr)
+
+    p.skipWhitespace()
+    while p.currentByte == CHAR_NEWLINE:
+      p.advance()
+      p.skipWhitespace()
 
   p.expressions
 

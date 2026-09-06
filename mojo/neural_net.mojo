@@ -2,7 +2,6 @@ from std.math import exp
 from helper import Helper
 from benchmark import Benchmark, Config
 
-
 comptime NN_LEARNING_RATE: Float64 = 1.0
 comptime NN_MOMENTUM: Float64 = 0.3
 comptime NN_TRAIN_RATE: Float64 = 0.3

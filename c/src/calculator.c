@@ -1,5 +1,25 @@
 #include "benchmark.h"
 
+#define CHAR_EOF '\0'
+#define CHAR_PLUS '+'
+#define CHAR_MINUS '-'
+#define CHAR_STAR '*'
+#define CHAR_SLASH '/'
+#define CHAR_PERCENT '%'
+#define CHAR_LPAREN '('
+#define CHAR_RPAREN ')'
+#define CHAR_EQUALS '='
+#define CHAR_ZERO '0'
+#define CHAR_NINE '9'
+#define CHAR_A_LOWER 'a'
+#define CHAR_Z_LOWER 'z'
+#define CHAR_A_UPPER 'A'
+#define CHAR_Z_UPPER 'Z'
+#define CHAR_SPACE ' '
+#define CHAR_TAB '\t'
+#define CHAR_NEWLINE '\n'
+#define CHAR_CR '\r'
+
 typedef enum {
   AST_NUMBER,
   AST_VARIABLE,
@@ -110,26 +130,46 @@ static void ast_node_free(AST_Node *node) {
 typedef struct {
   const char *input;
   size_t pos;
+  size_t len;
   char current_char;
 } CalculatorAstParser;
 
 static AST_Node *
 calculator_ast_parser_parse_expression(CalculatorAstParser *parser);
+static AST_Node *calculator_ast_parser_parse_term(CalculatorAstParser *parser);
+static AST_Node *
+calculator_ast_parser_parse_factor(CalculatorAstParser *parser);
+
+static bool is_digit(char c) { return c >= CHAR_ZERO && c <= CHAR_NINE; }
+
+static bool is_letter(char c) {
+  return (c >= CHAR_A_LOWER && c <= CHAR_Z_LOWER) ||
+         (c >= CHAR_A_UPPER && c <= CHAR_Z_UPPER);
+}
+
+static bool is_whitespace(char c) {
+  return c == CHAR_SPACE || c == CHAR_TAB || c == CHAR_NEWLINE || c == CHAR_CR;
+}
 
 static void calculator_ast_parser_init(CalculatorAstParser *parser,
                                        const char *input) {
   parser->input = input;
   parser->pos = 0;
-  parser->current_char = input[0];
+  parser->len = strlen(input);
+  parser->current_char = parser->len > 0 ? input[0] : CHAR_EOF;
 }
 
 static void calculator_ast_parser_advance(CalculatorAstParser *parser) {
   parser->pos++;
-  parser->current_char = parser->input[parser->pos];
+  if (parser->pos >= parser->len) {
+    parser->current_char = CHAR_EOF;
+  } else {
+    parser->current_char = parser->input[parser->pos];
+  }
 }
 
 static void calculator_ast_parser_skip_whitespace(CalculatorAstParser *parser) {
-  while (parser->current_char && isspace((unsigned char)parser->current_char)) {
+  while (is_whitespace(parser->current_char)) {
     calculator_ast_parser_advance(parser);
   }
 }
@@ -137,8 +177,8 @@ static void calculator_ast_parser_skip_whitespace(CalculatorAstParser *parser) {
 static AST_Node *
 calculator_ast_parser_parse_number(CalculatorAstParser *parser) {
   int64_t value = 0;
-  while (parser->current_char && isdigit((unsigned char)parser->current_char)) {
-    value = value * 10 + (parser->current_char - '0');
+  while (is_digit(parser->current_char)) {
+    value = value * 10 + (parser->current_char - CHAR_ZERO);
     calculator_ast_parser_advance(parser);
   }
   return ast_node_new_number(value);
@@ -147,9 +187,7 @@ calculator_ast_parser_parse_number(CalculatorAstParser *parser) {
 static AST_Node *
 calculator_ast_parser_parse_variable(CalculatorAstParser *parser) {
   size_t start = parser->pos;
-  while (parser->current_char &&
-         (isalpha((unsigned char)parser->current_char) ||
-          isdigit((unsigned char)parser->current_char))) {
+  while (is_letter(parser->current_char) || is_digit(parser->current_char)) {
     calculator_ast_parser_advance(parser);
   }
 
@@ -160,7 +198,7 @@ calculator_ast_parser_parse_variable(CalculatorAstParser *parser) {
 
   calculator_ast_parser_skip_whitespace(parser);
 
-  if (parser->current_char == '=') {
+  if (parser->current_char == CHAR_EQUALS) {
     calculator_ast_parser_advance(parser);
     AST_Node *expr = calculator_ast_parser_parse_expression(parser);
     AST_Node *node = ast_node_new_assignment(var_name, expr);
@@ -177,41 +215,37 @@ static AST_Node *
 calculator_ast_parser_parse_factor(CalculatorAstParser *parser) {
   calculator_ast_parser_skip_whitespace(parser);
 
-  if (!parser->current_char) {
-    return ast_node_new_number(0);
-  }
-
-  if (isdigit((unsigned char)parser->current_char)) {
+  if (is_digit(parser->current_char)) {
     return calculator_ast_parser_parse_number(parser);
   }
 
-  if (isalpha((unsigned char)parser->current_char)) {
+  if (is_letter(parser->current_char)) {
     return calculator_ast_parser_parse_variable(parser);
   }
 
-  if (parser->current_char == '(') {
+  if (parser->current_char == CHAR_LPAREN) {
     calculator_ast_parser_advance(parser);
     AST_Node *node = calculator_ast_parser_parse_expression(parser);
     calculator_ast_parser_skip_whitespace(parser);
-    if (parser->current_char == ')') {
+    if (parser->current_char == CHAR_RPAREN) {
       calculator_ast_parser_advance(parser);
     }
     return node;
   }
 
+  calculator_ast_parser_advance(parser);
   return ast_node_new_number(0);
 }
 
 static AST_Node *calculator_ast_parser_parse_term(CalculatorAstParser *parser) {
   AST_Node *node = calculator_ast_parser_parse_factor(parser);
 
-  while (1) {
+  while (true) {
     calculator_ast_parser_skip_whitespace(parser);
-    if (!parser->current_char)
-      break;
 
-    if (parser->current_char == '*' || parser->current_char == '/' ||
-        parser->current_char == '%') {
+    if (parser->current_char == CHAR_STAR ||
+        parser->current_char == CHAR_SLASH ||
+        parser->current_char == CHAR_PERCENT) {
       char op = parser->current_char;
       calculator_ast_parser_advance(parser);
       AST_Node *right = calculator_ast_parser_parse_factor(parser);
@@ -228,12 +262,11 @@ static AST_Node *
 calculator_ast_parser_parse_expression(CalculatorAstParser *parser) {
   AST_Node *node = calculator_ast_parser_parse_term(parser);
 
-  while (1) {
+  while (true) {
     calculator_ast_parser_skip_whitespace(parser);
-    if (!parser->current_char)
-      break;
 
-    if (parser->current_char == '+' || parser->current_char == '-') {
+    if (parser->current_char == CHAR_PLUS ||
+        parser->current_char == CHAR_MINUS) {
       char op = parser->current_char;
       calculator_ast_parser_advance(parser);
       AST_Node *right = calculator_ast_parser_parse_term(parser);
@@ -250,9 +283,9 @@ static void calculator_ast_parser_parse_all(CalculatorAstParser *parser,
                                             CalculatorAstData *data) {
   data->expressions_count = 0;
 
-  while (parser->current_char) {
+  while (parser->current_char != CHAR_EOF) {
     calculator_ast_parser_skip_whitespace(parser);
-    if (!parser->current_char)
+    if (parser->current_char == CHAR_EOF)
       break;
 
     if (data->expressions_count >= data->expressions_capacity) {
@@ -264,6 +297,12 @@ static void calculator_ast_parser_parse_all(CalculatorAstParser *parser,
 
     data->expressions[data->expressions_count++] =
         calculator_ast_parser_parse_expression(parser);
+
+    calculator_ast_parser_skip_whitespace(parser);
+    while (parser->current_char == CHAR_NEWLINE) {
+      calculator_ast_parser_advance(parser);
+      calculator_ast_parser_skip_whitespace(parser);
+    }
   }
 }
 

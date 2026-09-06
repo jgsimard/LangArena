@@ -31,7 +31,6 @@ from log_parser import LogParser
 from template import TemplateRegex, TemplateParse
 from json import JsonGenerate, JsonParseDom, JsonParseMapping
 
-
 comptime BenchVariant = Variant[
     BinarytreesObj,
     BinarytreesArena,

@@ -2290,6 +2290,27 @@ class CacheSimulation(Benchmark):
         return "Etc::CacheSimulation"
 
 
+CHAR_EOF = 0
+CHAR_PLUS = ord('+')
+CHAR_MINUS = ord('-')
+CHAR_STAR = ord('*')
+CHAR_SLASH = ord('/')
+CHAR_PERCENT = ord('%')
+CHAR_LPAREN = ord('(')
+CHAR_RPAREN = ord(')')
+CHAR_EQUALS = ord('=')
+CHAR_ZERO = ord('0')
+CHAR_NINE = ord('9')
+CHAR_A_LOWER = ord('a')
+CHAR_Z_LOWER = ord('z')
+CHAR_A_UPPER = ord('A')
+CHAR_Z_UPPER = ord('Z')
+CHAR_SPACE = ord(' ')
+CHAR_TAB = ord('\t')
+CHAR_NEWLINE = ord('\n')
+CHAR_CR = ord('\r')
+
+
 class Node2(ABC):
     pass
 
@@ -2325,30 +2346,34 @@ class Parser2:
 
     def __init__(self, input_str: str):
         self.input = input_str
+        self.bytes = input_str.encode('ascii')
         self.pos = 0
-        self.chars = list(input_str)
-        self.current_char = self.chars[0] if self.chars else '\0'
+        self.len = len(self.bytes)
+        self.current_byte = self.bytes[0] if self.len > 0 else CHAR_EOF
         self.expressions: List[Node2] = []
 
     def parse(self):
-        while self.pos < len(self.chars):
+        while self.current_byte != CHAR_EOF:
             self._skip_whitespace()
-            if self.pos >= len(self.chars):
+            if self.current_byte == CHAR_EOF:
                 break
 
             expr = self._parse_expression()
             self.expressions.append(expr)
 
+            self._skip_whitespace()
+            while self.current_byte == CHAR_NEWLINE:
+                self._advance()
+                self._skip_whitespace()
+
     def _parse_expression(self) -> Node2:
         node = self._parse_term()
 
-        while self.pos < len(self.chars):
+        while True:
             self._skip_whitespace()
-            if self.pos >= len(self.chars):
-                break
 
-            if self.current_char in '+-':
-                op = self.current_char
+            if self.current_byte == CHAR_PLUS or self.current_byte == CHAR_MINUS:
+                op = chr(self.current_byte)
                 self._advance()
                 right = self._parse_term()
                 node = BinaryOpNode(op, node, right)
@@ -2360,13 +2385,13 @@ class Parser2:
     def _parse_term(self) -> Node2:
         node = self._parse_factor()
 
-        while self.pos < len(self.chars):
+        while True:
             self._skip_whitespace()
-            if self.pos >= len(self.chars):
-                break
 
-            if self.current_char in '*/%':
-                op = self.current_char
+            if (self.current_byte == CHAR_STAR or
+                    self.current_byte == CHAR_SLASH or
+                    self.current_byte == CHAR_PERCENT):
+                op = chr(self.current_byte)
                 self._advance()
                 right = self._parse_factor()
                 node = BinaryOpNode(op, node, right)
@@ -2377,44 +2402,40 @@ class Parser2:
 
     def _parse_factor(self) -> Node2:
         self._skip_whitespace()
-        if self.pos >= len(self.chars):
-            return NumberNode(0)
 
-        char = self.current_char
-
-        if self._is_digit(char):
+        if self._is_digit(self.current_byte):
             return self._parse_number()
-        elif self._is_letter(char):
+        elif self._is_letter(self.current_byte):
             return self._parse_variable()
-        elif char == '(':
+        elif self.current_byte == CHAR_LPAREN:
             self._advance()
             node = self._parse_expression()
             self._skip_whitespace()
-            if self.current_char == ')':
+            if self.current_byte == CHAR_RPAREN:
                 self._advance()
             return node
         else:
+            self._advance()
             return NumberNode(0)
 
     def _parse_number(self) -> NumberNode:
         value = 0
-        while self.pos < len(self.chars) and self._is_digit(self.current_char):
-            digit = ord(self.current_char) - ord('0')
+        while self._is_digit(self.current_byte):
+            digit = self.current_byte - CHAR_ZERO
             value = value * 10 + digit
             self._advance()
         return NumberNode(value)
 
     def _parse_variable(self) -> Node2:
         start = self.pos
-        while (self.pos < len(self.chars) and
-               (self._is_letter(self.current_char) or
-                self._is_digit(self.current_char))):
+        while (self._is_letter(self.current_byte) or
+               self._is_digit(self.current_byte)):
             self._advance()
 
         var_name = self.input[start:self.pos]
 
         self._skip_whitespace()
-        if self.pos < len(self.chars) and self.current_char == '=':
+        if self.current_byte == CHAR_EQUALS:
             self._advance()
             expr = self._parse_expression()
             return AssignmentNode(var_name, expr)
@@ -2423,27 +2444,28 @@ class Parser2:
 
     def _advance(self):
         self.pos += 1
-        if self.pos >= len(self.chars):
-            self.current_char = '\0'
+        if self.pos >= self.len:
+            self.current_byte = CHAR_EOF
         else:
-            self.current_char = self.chars[self.pos]
+            self.current_byte = self.bytes[self.pos]
 
     def _skip_whitespace(self):
-        while self.pos < len(self.chars) and self._is_whitespace(
-                self.current_char):
+        while self._is_whitespace(self.current_byte):
             self._advance()
 
     @staticmethod
-    def _is_digit(ch: str) -> bool:
-        return '0' <= ch <= '9'
+    def _is_digit(byte: int) -> bool:
+        return CHAR_ZERO <= byte <= CHAR_NINE
 
     @staticmethod
-    def _is_letter(ch: str) -> bool:
-        return ('a' <= ch <= 'z') or ('A' <= ch <= 'Z')
+    def _is_letter(byte: int) -> bool:
+        return (CHAR_A_LOWER <= byte <= CHAR_Z_LOWER) or (CHAR_A_UPPER <= byte
+                                                          <= CHAR_Z_UPPER)
 
     @staticmethod
-    def _is_whitespace(ch: str) -> bool:
-        return ch in ' \t\n\r'
+    def _is_whitespace(byte: int) -> bool:
+        return (byte == CHAR_SPACE or byte == CHAR_TAB or
+                byte == CHAR_NEWLINE or byte == CHAR_CR)
 
 
 class CalculatorAst(Benchmark):

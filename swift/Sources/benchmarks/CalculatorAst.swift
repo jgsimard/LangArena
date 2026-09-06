@@ -1,5 +1,25 @@
 import Foundation
 
+private let CHAR_EOF: UInt8 = 0
+private let CHAR_PLUS = UInt8(ascii: "+")
+private let CHAR_MINUS = UInt8(ascii: "-")
+private let CHAR_STAR = UInt8(ascii: "*")
+private let CHAR_SLASH = UInt8(ascii: "/")
+private let CHAR_PERCENT = UInt8(ascii: "%")
+private let CHAR_LPAREN = UInt8(ascii: "(")
+private let CHAR_RPAREN = UInt8(ascii: ")")
+private let CHAR_EQUALS = UInt8(ascii: "=")
+private let CHAR_ZERO = UInt8(ascii: "0")
+private let CHAR_NINE = UInt8(ascii: "9")
+private let CHAR_A_LOWER = UInt8(ascii: "a")
+private let CHAR_Z_LOWER = UInt8(ascii: "z")
+private let CHAR_A_UPPER = UInt8(ascii: "A")
+private let CHAR_Z_UPPER = UInt8(ascii: "Z")
+private let CHAR_SPACE = UInt8(ascii: " ")
+private let CHAR_TAB = UInt8(ascii: "\t")
+private let CHAR_NEWLINE = UInt8(ascii: "\n")
+private let CHAR_CR = UInt8(ascii: "\r")
+
 final class CalculatorAst: BenchmarkProtocol {
   indirect enum Node {
     case number(Int64)
@@ -59,31 +79,42 @@ final class CalculatorAst: BenchmarkProtocol {
 
   private class Parser {
     private let input: String
-    private var pos: String.Index
+    private let bytes: [UInt8]
+    private var pos: Int
+    private let len: Int
+    private var currentByte: UInt8
     var expressions: [Node] = []
 
     init(_ input: String) {
       self.input = input
-      self.pos = input.startIndex
+      self.bytes = Array(input.utf8)
+      self.pos = 0
+      self.len = self.bytes.count
+      self.currentByte = self.len > 0 ? self.bytes[0] : CHAR_EOF
     }
 
     func parse() -> [Node] {
-      while pos < input.endIndex {
+      while currentByte != CHAR_EOF {
         skipWhitespace()
-        if pos >= input.endIndex { break }
+        if currentByte == CHAR_EOF { break }
         expressions.append(parseExpression())
+
+        skipWhitespace()
+        while currentByte == CHAR_NEWLINE {
+          advance()
+          skipWhitespace()
+        }
       }
       return expressions
     }
 
     private func parseExpression() -> Node {
       var node = parseTerm()
-      while pos < input.endIndex {
+      while true {
         skipWhitespace()
-        guard pos < input.endIndex else { break }
-        let ch = currentChar()
-        if ch == "+" || ch == "-" {
-          let op = ch
+
+        if currentByte == CHAR_PLUS || currentByte == CHAR_MINUS {
+          let op = Character(UnicodeScalar(currentByte))
           advance()
           let right = parseTerm()
           node = .binaryOp(op, node, right)
@@ -96,12 +127,11 @@ final class CalculatorAst: BenchmarkProtocol {
 
     private func parseTerm() -> Node {
       var node = parseFactor()
-      while pos < input.endIndex {
+      while true {
         skipWhitespace()
-        guard pos < input.endIndex else { break }
-        let ch = currentChar()
-        if ch == "*" || ch == "/" || ch == "%" {
-          let op = ch
+
+        if currentByte == CHAR_STAR || currentByte == CHAR_SLASH || currentByte == CHAR_PERCENT {
+          let op = Character(UnicodeScalar(currentByte))
           advance()
           let right = parseFactor()
           node = .binaryOp(op, node, right)
@@ -114,32 +144,29 @@ final class CalculatorAst: BenchmarkProtocol {
 
     private func parseFactor() -> Node {
       skipWhitespace()
-      guard pos < input.endIndex else { return .number(0) }
-      let ch = currentChar()
-      switch ch {
-      case "0"..."9":
+
+      if isDigit(currentByte) {
         return parseNumber()
-      case "a"..."z":
+      } else if isLetter(currentByte) {
         return parseVariable()
-      case "(":
+      } else if currentByte == CHAR_LPAREN {
         advance()
         let node = parseExpression()
         skipWhitespace()
-        if currentChar() == ")" {
+        if currentByte == CHAR_RPAREN {
           advance()
         }
         return node
-      default:
+      } else {
+        advance()
         return .number(0)
       }
     }
 
     private func parseNumber() -> Node {
       var value: Int64 = 0
-      while pos < input.endIndex {
-        let ch = currentChar()
-        guard ch.isNumber else { break }
-        value = value * 10 + Int64(ch.wholeNumberValue ?? 0)
+      while isDigit(currentByte) {
+        value = value * 10 + Int64(currentByte - CHAR_ZERO)
         advance()
       }
       return .number(value)
@@ -147,14 +174,14 @@ final class CalculatorAst: BenchmarkProtocol {
 
     private func parseVariable() -> Node {
       let start = pos
-      while pos < input.endIndex {
-        let ch = currentChar()
-        guard ch.isLetter || ch.isNumber else { break }
+      while isLetter(currentByte) || isDigit(currentByte) {
         advance()
       }
-      let varName = String(input[start..<pos])
+
+      let varName = String(bytes: bytes[start..<pos], encoding: .ascii) ?? ""
+
       skipWhitespace()
-      if pos < input.endIndex && currentChar() == "=" {
+      if currentByte == CHAR_EQUALS {
         advance()
         let expr = parseExpression()
         return .assignment(varName, expr)
@@ -162,20 +189,32 @@ final class CalculatorAst: BenchmarkProtocol {
       return .variable(varName)
     }
 
-    private func currentChar() -> Character {
-      guard pos < input.endIndex else { return "\0" }
-      return input[pos]
-    }
-
     private func advance() {
-      guard pos < input.endIndex else { return }
-      pos = input.index(after: pos)
+      pos += 1
+      if pos >= len {
+        currentByte = CHAR_EOF
+      } else {
+        currentByte = bytes[pos]
+      }
     }
 
     private func skipWhitespace() {
-      while pos < input.endIndex && input[pos].isWhitespace {
+      while isWhitespace(currentByte) {
         advance()
       }
+    }
+
+    private func isDigit(_ byte: UInt8) -> Bool {
+      return byte >= CHAR_ZERO && byte <= CHAR_NINE
+    }
+
+    private func isLetter(_ byte: UInt8) -> Bool {
+      return (byte >= CHAR_A_LOWER && byte <= CHAR_Z_LOWER)
+        || (byte >= CHAR_A_UPPER && byte <= CHAR_Z_UPPER)
+    }
+
+    private func isWhitespace(_ byte: UInt8) -> Bool {
+      return byte == CHAR_SPACE || byte == CHAR_TAB || byte == CHAR_NEWLINE || byte == CHAR_CR
     }
   }
 

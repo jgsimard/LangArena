@@ -62,14 +62,44 @@ class CalculatorAst : Benchmark() {
     private class Parser(
         private val input: String,
     ) {
+        companion object {
+            private const val CHAR_EOF = '\u0000'
+            private const val CHAR_PLUS = '+'
+            private const val CHAR_MINUS = '-'
+            private const val CHAR_STAR = '*'
+            private const val CHAR_SLASH = '/'
+            private const val CHAR_PERCENT = '%'
+            private const val CHAR_LPAREN = '('
+            private const val CHAR_RPAREN = ')'
+            private const val CHAR_EQUALS = '='
+            private const val CHAR_ZERO = '0'
+            private const val CHAR_NINE = '9'
+            private const val CHAR_A_LOWER = 'a'
+            private const val CHAR_Z_LOWER = 'z'
+            private const val CHAR_A_UPPER = 'A'
+            private const val CHAR_Z_UPPER = 'Z'
+            private const val CHAR_SPACE = ' '
+            private const val CHAR_TAB = '\t'
+            private const val CHAR_NEWLINE = '\n'
+            private const val CHAR_CR = '\r'
+        }
+
         private var pos = 0
-        private val chars = input.toCharArray()
-        private val length = chars.size
+        private var currentChar = if (input.isNotEmpty()) input[0] else CHAR_EOF
         val expressions = mutableListOf<Node>()
 
         fun parse(): List<Node> {
-            while (pos < length) {
+            while (currentChar != CHAR_EOF) {
+                skipWhitespace()
+                if (currentChar == CHAR_EOF) break
+
                 expressions.add(parseExpression())
+
+                skipWhitespace()
+                while (currentChar == CHAR_NEWLINE) {
+                    advance()
+                    skipWhitespace()
+                }
             }
             return expressions
         }
@@ -77,13 +107,11 @@ class CalculatorAst : Benchmark() {
         private fun parseExpression(): Node {
             var node = parseTerm()
 
-            while (pos < length) {
+            while (true) {
                 skipWhitespace()
-                if (pos >= length) break
 
-                val ch = currentChar()
-                if (ch == '+' || ch == '-') {
-                    val op = ch
+                if (currentChar == CHAR_PLUS || currentChar == CHAR_MINUS) {
+                    val op = currentChar
                     advance()
                     val right = parseTerm()
                     node = BinaryOp(op, node, right)
@@ -98,13 +126,11 @@ class CalculatorAst : Benchmark() {
         private fun parseTerm(): Node {
             var node = parseFactor()
 
-            while (pos < length) {
+            while (true) {
                 skipWhitespace()
-                if (pos >= length) break
 
-                val ch = currentChar()
-                if (ch == '*' || ch == '/' || ch == '%') {
-                    val op = ch
+                if (currentChar == CHAR_STAR || currentChar == CHAR_SLASH || currentChar == CHAR_PERCENT) {
+                    val op = currentChar
                     advance()
                     val right = parseFactor()
                     node = BinaryOp(op, node, right)
@@ -118,28 +144,28 @@ class CalculatorAst : Benchmark() {
 
         private fun parseFactor(): Node {
             skipWhitespace()
-            if (pos >= length) return Number(0)
 
-            return when (currentChar()) {
-                in '0'..'9' -> {
+            return when {
+                isDigit(currentChar) -> {
                     parseNumber()
                 }
 
-                in 'a'..'z' -> {
+                isLetter(currentChar) -> {
                     parseVariable()
                 }
 
-                '(' -> {
+                currentChar == CHAR_LPAREN -> {
                     advance()
                     val node = parseExpression()
                     skipWhitespace()
-                    if (currentChar() == ')') {
+                    if (currentChar == CHAR_RPAREN) {
                         advance()
                     }
                     node
                 }
 
                 else -> {
+                    advance()
                     Number(0)
                 }
             }
@@ -147,8 +173,8 @@ class CalculatorAst : Benchmark() {
 
         private fun parseNumber(): Node {
             var value = 0L
-            while (pos < length && chars[pos] in '0'..'9') {
-                value = value * 10 + (chars[pos] - '0')
+            while (isDigit(currentChar)) {
+                value = value * 10 + (currentChar - CHAR_ZERO)
                 advance()
             }
             return Number(value)
@@ -156,13 +182,13 @@ class CalculatorAst : Benchmark() {
 
         private fun parseVariable(): Node {
             val start = pos
-            while (pos < length && (chars[pos] in 'a'..'z' || chars[pos] in '0'..'9')) {
+            while (isLetter(currentChar) || isDigit(currentChar)) {
                 advance()
             }
             val varName = input.substring(start, pos)
 
             skipWhitespace()
-            if (pos < length && currentChar() == '=') {
+            if (currentChar == CHAR_EQUALS) {
                 advance()
                 val expr = parseExpression()
                 return Assignment(varName, expr)
@@ -171,17 +197,28 @@ class CalculatorAst : Benchmark() {
             return Variable(varName)
         }
 
-        private fun currentChar(): Char = if (pos < length) chars[pos] else '\u0000'
-
         private fun advance() {
-            if (pos < length) pos++
+            pos++
+            if (pos >= input.length) {
+                currentChar = CHAR_EOF
+            } else {
+                currentChar = input[pos]
+            }
         }
 
         private fun skipWhitespace() {
-            while (pos < length && Character.isWhitespace(chars[pos])) {
+            while (isWhitespace(currentChar)) {
                 advance()
             }
         }
+
+        private fun isDigit(char: Char): Boolean = char >= CHAR_ZERO && char <= CHAR_NINE
+
+        private fun isLetter(char: Char): Boolean =
+            (char >= CHAR_A_LOWER && char <= CHAR_Z_LOWER) ||
+                (char >= CHAR_A_UPPER && char <= CHAR_Z_UPPER)
+
+        private fun isWhitespace(char: Char): Boolean = char == CHAR_SPACE || char == CHAR_TAB || char == CHAR_NEWLINE || char == CHAR_CR
     }
 
     override fun run(iterationId: Int) {

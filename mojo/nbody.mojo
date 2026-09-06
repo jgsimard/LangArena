@@ -2,7 +2,6 @@ from std.math import sqrt
 from helper import Helper
 from benchmark import Benchmark, Config
 
-
 comptime SOLAR_MASS = 4.0 * 3.141592653589793 * 3.141592653589793
 comptime DAYS_PER_YEAR = 365.24
 

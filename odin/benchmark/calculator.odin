@@ -7,6 +7,26 @@ import "core:slice"
 import "core:strconv"
 import "core:strings"
 
+CHAR_EOF :: 0
+CHAR_PLUS :: '+'
+CHAR_MINUS :: '-'
+CHAR_STAR :: '*'
+CHAR_SLASH :: '/'
+CHAR_PERCENT :: '%'
+CHAR_LPAREN :: '('
+CHAR_RPAREN :: ')'
+CHAR_EQUALS :: '='
+CHAR_ZERO :: '0'
+CHAR_NINE :: '9'
+CHAR_A_LOWER :: 'a'
+CHAR_Z_LOWER :: 'z'
+CHAR_A_UPPER :: 'A'
+CHAR_Z_UPPER :: 'Z'
+CHAR_SPACE :: ' '
+CHAR_TAB :: '\t'
+CHAR_NEWLINE :: '\n'
+CHAR_CR :: '\r'
+
 Number :: struct {
 	value: i64,
 }
@@ -81,6 +101,7 @@ ast_new_assignment :: proc(ast: ^AST) -> ^Assignment {
 Parser :: struct {
 	input:        string,
 	pos:          int,
+	len:          int,
 	current_char: u8,
 	expressions:  [dynamic]^CalcNode,
 	ast:          ^AST,
@@ -89,9 +110,10 @@ Parser :: struct {
 parser_init :: proc(p: ^Parser, input_str: string, ast: ^AST) {
 	p.input = input_str
 	p.pos = 0
+	p.len = len(input_str)
 	p.ast = ast
 	p.expressions = make([dynamic]^CalcNode)
-	p.current_char = len(p.input) > 0 ? p.input[0] : 0
+	p.current_char = p.len > 0 ? p.input[0] : CHAR_EOF
 }
 
 parser_destroy :: proc(p: ^Parser) {
@@ -100,23 +122,23 @@ parser_destroy :: proc(p: ^Parser) {
 
 parser_advance :: proc(p: ^Parser) {
 	p.pos += 1
-	p.current_char = p.pos < len(p.input) ? p.input[p.pos] : 0
+	if p.pos >= p.len {
+		p.current_char = CHAR_EOF
+	} else {
+		p.current_char = p.input[p.pos]
+	}
 }
 
 parser_skip_whitespace :: proc(p: ^Parser) {
-	for p.current_char != 0 &&
-	    (p.current_char == ' ' ||
-			    p.current_char == '\t' ||
-			    p.current_char == '\n' ||
-			    p.current_char == '\r') {
+	for parser_is_whitespace(p.current_char) {
 		parser_advance(p)
 	}
 }
 
 parser_parse_number :: proc(p: ^Parser) -> ^CalcNode {
 	v: i64 = 0
-	for p.current_char != 0 && p.current_char >= '0' && p.current_char <= '9' {
-		v = v * 10 + i64(p.current_char - '0')
+	for parser_is_digit(p.current_char) {
+		v = v * 10 + i64(p.current_char - CHAR_ZERO)
 		parser_advance(p)
 	}
 
@@ -129,17 +151,14 @@ parser_parse_number :: proc(p: ^Parser) -> ^CalcNode {
 
 parser_parse_variable :: proc(p: ^Parser) -> ^CalcNode {
 	start := p.pos
-	for p.current_char != 0 &&
-	    ((p.current_char >= 'a' && p.current_char <= 'z') ||
-			    (p.current_char >= 'A' && p.current_char <= 'Z') ||
-			    (p.current_char >= '0' && p.current_char <= '9')) {
+	for parser_is_letter(p.current_char) || parser_is_digit(p.current_char) {
 		parser_advance(p)
 	}
 
 	var_name := p.input[start:p.pos]
 
 	parser_skip_whitespace(p)
-	if p.current_char == '=' {
+	if p.current_char == CHAR_EQUALS {
 		parser_advance(p)
 		parser_skip_whitespace(p)
 		expr := parser_parse_expression(p)
@@ -161,28 +180,20 @@ parser_parse_variable :: proc(p: ^Parser) -> ^CalcNode {
 
 parser_parse_factor :: proc(p: ^Parser) -> ^CalcNode {
 	parser_skip_whitespace(p)
-	if p.current_char == 0 {
-		node := ast_new_node(p.ast)
-		node.data = Number {
-			value = 0,
-		}
-		return node
-	}
 
-	if p.current_char >= '0' && p.current_char <= '9' {
+	if parser_is_digit(p.current_char) {
 		return parser_parse_number(p)
 	}
 
-	if (p.current_char >= 'a' && p.current_char <= 'z') ||
-	   (p.current_char >= 'A' && p.current_char <= 'Z') {
+	if parser_is_letter(p.current_char) {
 		return parser_parse_variable(p)
 	}
 
-	if p.current_char == '(' {
+	if p.current_char == CHAR_LPAREN {
 		parser_advance(p)
 		node := parser_parse_expression(p)
 		parser_skip_whitespace(p)
-		if p.current_char == ')' {
+		if p.current_char == CHAR_RPAREN {
 			parser_advance(p)
 		}
 		return node
@@ -192,6 +203,7 @@ parser_parse_factor :: proc(p: ^Parser) -> ^CalcNode {
 	node.data = Number {
 		value = 0,
 	}
+	parser_advance(p)
 	return node
 }
 
@@ -200,9 +212,10 @@ parser_parse_term :: proc(p: ^Parser) -> ^CalcNode {
 
 	for {
 		parser_skip_whitespace(p)
-		if p.current_char == 0 do break
 
-		if p.current_char == '*' || p.current_char == '/' || p.current_char == '%' {
+		if p.current_char == CHAR_STAR ||
+		   p.current_char == CHAR_SLASH ||
+		   p.current_char == CHAR_PERCENT {
 			op := p.current_char
 			parser_advance(p)
 			parser_skip_whitespace(p)
@@ -229,9 +242,8 @@ parser_parse_expression :: proc(p: ^Parser) -> ^CalcNode {
 
 	for {
 		parser_skip_whitespace(p)
-		if p.current_char == 0 do break
 
-		if p.current_char == '+' || p.current_char == '-' {
+		if p.current_char == CHAR_PLUS || p.current_char == CHAR_MINUS {
 			op := p.current_char
 			parser_advance(p)
 			parser_skip_whitespace(p)
@@ -256,18 +268,33 @@ parser_parse_expression :: proc(p: ^Parser) -> ^CalcNode {
 parser_parse :: proc(p: ^Parser) {
 	clear(&p.expressions)
 
-	for p.current_char != 0 {
+	for p.current_char != CHAR_EOF {
 		parser_skip_whitespace(p)
-		if p.current_char == 0 do break
+		if p.current_char == CHAR_EOF do break
 
 		append(&p.expressions, parser_parse_expression(p))
 
 		parser_skip_whitespace(p)
-		for p.current_char != 0 && (p.current_char == '\n' || p.current_char == ';') {
+		for p.current_char == CHAR_NEWLINE {
 			parser_advance(p)
 			parser_skip_whitespace(p)
 		}
 	}
+}
+
+parser_is_digit :: proc(byte: u8) -> bool {
+	return byte >= CHAR_ZERO && byte <= CHAR_NINE
+}
+
+parser_is_letter :: proc(byte: u8) -> bool {
+	return(
+		(byte >= CHAR_A_LOWER && byte <= CHAR_Z_LOWER) ||
+		(byte >= CHAR_A_UPPER && byte <= CHAR_Z_UPPER) \
+	)
+}
+
+parser_is_whitespace :: proc(byte: u8) -> bool {
+	return byte == CHAR_SPACE || byte == CHAR_TAB || byte == CHAR_NEWLINE || byte == CHAR_CR
 }
 
 generate_random_program :: proc(n: i64 = 1000, allocator := context.allocator) -> string {

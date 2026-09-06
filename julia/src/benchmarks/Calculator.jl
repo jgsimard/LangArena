@@ -1,5 +1,25 @@
 using ..BenchmarkFramework
 
+const CHAR_EOF = UInt8(0)
+const CHAR_PLUS = UInt8('+')
+const CHAR_MINUS = UInt8('-')
+const CHAR_STAR = UInt8('*')
+const CHAR_SLASH = UInt8('/')
+const CHAR_PERCENT = UInt8('%')
+const CHAR_LPAREN = UInt8('(')
+const CHAR_RPAREN = UInt8(')')
+const CHAR_EQUALS = UInt8('=')
+const CHAR_ZERO = UInt8('0')
+const CHAR_NINE = UInt8('9')
+const CHAR_A_LOWER = UInt8('a')
+const CHAR_Z_LOWER = UInt8('z')
+const CHAR_A_UPPER = UInt8('A')
+const CHAR_Z_UPPER = UInt8('Z')
+const CHAR_SPACE = UInt8(' ')
+const CHAR_TAB = UInt8('\t')
+const CHAR_NEWLINE = UInt8('\n')
+const CHAR_CR = UInt8('\r')
+
 abstract type CalcNode end
 
 struct NumberCalcNode <: CalcNode
@@ -86,22 +106,45 @@ end
 mutable struct Parser
     input::String
     pos::Int
-    chars::Vector{Char}
-    current_char::Char
+    len::Int
+    current_byte::UInt8
     expressions::Vector{CalcNode}
 
     function Parser(input::String)
-        chars = collect(input)
-        current_char = length(chars) > 0 ? chars[1] : '\0'
-        new(input, 1, chars, current_char, CalcNode[])
+        len = ncodeunits(input)
+        current_byte = len > 0 ? codeunit(input, 1) : CHAR_EOF
+        new(input, 1, len, current_byte, CalcNode[])
     end
 end
 
+function is_digit(byte::UInt8)::Bool
+    return CHAR_ZERO <= byte <= CHAR_NINE
+end
+
+function is_letter(byte::UInt8)::Bool
+    return (CHAR_A_LOWER <= byte <= CHAR_Z_LOWER) || (CHAR_A_UPPER <= byte <= CHAR_Z_UPPER)
+end
+
+function is_whitespace(byte::UInt8)::Bool
+    return byte == CHAR_SPACE || byte == CHAR_TAB || byte == CHAR_NEWLINE || byte == CHAR_CR
+end
+
 function parse(p::Parser)
-    while p.pos <= length(p.chars)
+    while p.current_byte != CHAR_EOF
+        skip_whitespace(p)
+        if p.current_byte == CHAR_EOF
+            break
+        end
+
         node = parse_expression(p)
         if node !== nothing
             push!(p.expressions, node)
+        end
+
+        skip_whitespace(p)
+        while p.current_byte == CHAR_NEWLINE
+            advance(p)
+            skip_whitespace(p)
         end
     end
 end
@@ -109,12 +152,11 @@ end
 function parse_expression(p::Parser)::CalcNode
     node = parse_term(p)
 
-    while p.pos <= length(p.chars)
+    while true
         skip_whitespace(p)
-        p.pos > length(p.chars) && break
 
-        if p.current_char == '+' || p.current_char == '-'
-            op = p.current_char
+        if p.current_byte == CHAR_PLUS || p.current_byte == CHAR_MINUS
+            op = Char(p.current_byte)
             advance(p)
             right = parse_term(p)
             node = BinaryOpCalcNode(op, node, right)
@@ -129,12 +171,13 @@ end
 function parse_term(p::Parser)::CalcNode
     node = parse_factor(p)
 
-    while p.pos <= length(p.chars)
+    while true
         skip_whitespace(p)
-        p.pos > length(p.chars) && break
 
-        if p.current_char == '*' || p.current_char == '/' || p.current_char == '%'
-            op = p.current_char
+        if p.current_byte == CHAR_STAR ||
+           p.current_byte == CHAR_SLASH ||
+           p.current_byte == CHAR_PERCENT
+            op = Char(p.current_byte)
             advance(p)
             right = parse_factor(p)
             node = BinaryOpCalcNode(op, node, right)
@@ -148,29 +191,29 @@ end
 
 function parse_factor(p::Parser)::CalcNode
     skip_whitespace(p)
-    p.pos > length(p.chars) && return NumberCalcNode(0)
 
-    if isdigit(p.current_char)
+    if is_digit(p.current_byte)
         return parse_number(p)
-    elseif islowercase(p.current_char)
+    elseif is_letter(p.current_byte)
         return parse_variable(p)
-    elseif p.current_char == '('
+    elseif p.current_byte == CHAR_LPAREN
         advance(p)
         node = parse_expression(p)
         skip_whitespace(p)
-        if p.current_char == ')'
+        if p.current_byte == CHAR_RPAREN
             advance(p)
         end
         return node
     else
+        advance(p)
         return NumberCalcNode(0)
     end
 end
 
 function parse_number(p::Parser)::CalcNode
     v = Int64(0)
-    while p.pos <= length(p.chars) && isdigit(p.current_char)
-        v = v * 10 + Int64(p.current_char - '0')
+    while is_digit(p.current_byte)
+        v = v * 10 + Int64(p.current_byte - CHAR_ZERO)
         advance(p)
     end
     return NumberCalcNode(v)
@@ -178,14 +221,13 @@ end
 
 function parse_variable(p::Parser)::CalcNode
     start = p.pos
-    while p.pos <= length(p.chars) &&
-        (islowercase(p.current_char) || isdigit(p.current_char))
+    while is_letter(p.current_byte) || is_digit(p.current_byte)
         advance(p)
     end
     var_name = p.input[start:(p.pos-1)]
 
     skip_whitespace(p)
-    if p.pos <= length(p.chars) && p.current_char == '='
+    if p.current_byte == CHAR_EQUALS
         advance(p)
         expr = parse_expression(p)
         return AssignmentCalcNode(var_name, expr)
@@ -196,15 +238,15 @@ end
 
 function advance(p::Parser)
     p.pos += 1
-    if p.pos > length(p.chars)
-        p.current_char = '\0'
+    if p.pos > p.len
+        p.current_byte = CHAR_EOF
     else
-        p.current_char = p.chars[p.pos]
+        p.current_byte = codeunit(p.input, p.pos)
     end
 end
 
 function skip_whitespace(p::Parser)
-    while p.pos <= length(p.chars) && isspace(p.current_char)
+    while is_whitespace(p.current_byte)
         advance(p)
     end
 end

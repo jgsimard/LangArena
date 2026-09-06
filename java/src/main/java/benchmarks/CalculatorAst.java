@@ -118,32 +118,61 @@ public class CalculatorAst extends Benchmark {
     }
 
     static class Parser {
+
+        private static final char CHAR_EOF = '\0';
+        private static final char CHAR_PLUS = '+';
+        private static final char CHAR_MINUS = '-';
+        private static final char CHAR_STAR = '*';
+        private static final char CHAR_SLASH = '/';
+        private static final char CHAR_PERCENT = '%';
+        private static final char CHAR_LPAREN = '(';
+        private static final char CHAR_RPAREN = ')';
+        private static final char CHAR_EQUALS = '=';
+        private static final char CHAR_ZERO = '0';
+        private static final char CHAR_NINE = '9';
+        private static final char CHAR_A_LOWER = 'a';
+        private static final char CHAR_Z_LOWER = 'z';
+        private static final char CHAR_A_UPPER = 'A';
+        private static final char CHAR_Z_UPPER = 'Z';
+        private static final char CHAR_SPACE = ' ';
+        private static final char CHAR_TAB = '\t';
+        private static final char CHAR_NEWLINE = '\n';
+        private static final char CHAR_CR = '\r';
+
         private final String input;
         private int pos;
-        private final char[] chars;
+        private char currentChar;
         final List<Node> expressions = new ArrayList<>();
 
         Parser(String input) {
             this.input = input;
-            this.chars = input.toCharArray();
+            this.pos = 0;
+            this.currentChar = input.length() > 0 ? input.charAt(0) : CHAR_EOF;
         }
 
         void parse() {
-            while (pos < chars.length) {
+            while (currentChar != CHAR_EOF) {
+                skipWhitespace();
+                if (currentChar == CHAR_EOF) break;
+
                 expressions.add(parseExpression());
+
+                skipWhitespace();
+                while (currentChar == CHAR_NEWLINE) {
+                    advance();
+                    skipWhitespace();
+                }
             }
         }
 
         private Node parseExpression() {
             Node node = parseTerm();
 
-            while (pos < chars.length) {
+            while (true) {
                 skipWhitespace();
-                if (pos >= chars.length) break;
 
-                char ch = chars[pos];
-                if (ch == '+' || ch == '-') {
-                    char op = ch;
+                if (currentChar == CHAR_PLUS || currentChar == CHAR_MINUS) {
+                    char op = currentChar;
                     advance();
                     Node right = parseTerm();
                     node = new BinaryOp(op, node, right);
@@ -158,13 +187,11 @@ public class CalculatorAst extends Benchmark {
         private Node parseTerm() {
             Node node = parseFactor();
 
-            while (pos < chars.length) {
+            while (true) {
                 skipWhitespace();
-                if (pos >= chars.length) break;
 
-                char ch = chars[pos];
-                if (ch == '*' || ch == '/' || ch == '%') {
-                    char op = ch;
+                if (currentChar == CHAR_STAR || currentChar == CHAR_SLASH || currentChar == CHAR_PERCENT) {
+                    char op = currentChar;
                     advance();
                     Node right = parseFactor();
                     node = new BinaryOp(op, node, right);
@@ -178,30 +205,29 @@ public class CalculatorAst extends Benchmark {
 
         private Node parseFactor() {
             skipWhitespace();
-            if (pos >= chars.length) return new Number(0);
 
-            char ch = chars[pos];
-            if (ch >= '0' && ch <= '9') {
+            if (isDigit(currentChar)) {
                 return parseNumber();
-            } else if (ch >= 'a' && ch <= 'z') {
+            } else if (isLetter(currentChar)) {
                 return parseVariable();
-            } else if (ch == '(') {
+            } else if (currentChar == CHAR_LPAREN) {
                 advance();
                 Node node = parseExpression();
                 skipWhitespace();
-                if (pos < chars.length && chars[pos] == ')') {
+                if (currentChar == CHAR_RPAREN) {
                     advance();
                 }
                 return node;
             } else {
+                advance();
                 return new Number(0);
             }
         }
 
         private Node parseNumber() {
             long value = 0;
-            while (pos < chars.length && chars[pos] >= '0' && chars[pos] <= '9') {
-                value = value * 10 + (chars[pos] - '0');
+            while (isDigit(currentChar)) {
+                value = value * 10 + (currentChar - CHAR_ZERO);
                 advance();
             }
             return new Number(value);
@@ -209,15 +235,13 @@ public class CalculatorAst extends Benchmark {
 
         private Node parseVariable() {
             int start = pos;
-            while (pos < chars.length &&
-                    ((chars[pos] >= 'a' && chars[pos] <= 'z') ||
-                     (chars[pos] >= '0' && chars[pos] <= '9'))) {
+            while (isLetter(currentChar) || isDigit(currentChar)) {
                 advance();
             }
             String varName = input.substring(start, pos);
 
             skipWhitespace();
-            if (pos < chars.length && chars[pos] == '=') {
+            if (currentChar == CHAR_EQUALS) {
                 advance();
                 Node expr = parseExpression();
                 return new Assignment(varName, expr);
@@ -227,13 +251,31 @@ public class CalculatorAst extends Benchmark {
         }
 
         private void advance() {
-            if (pos < chars.length) pos++;
+            pos++;
+            if (pos >= input.length()) {
+                currentChar = CHAR_EOF;
+            } else {
+                currentChar = input.charAt(pos);
+            }
         }
 
         private void skipWhitespace() {
-            while (pos < chars.length && Character.isWhitespace(chars[pos])) {
+            while (isWhitespace(currentChar)) {
                 advance();
             }
+        }
+
+        private boolean isDigit(char c) {
+            return c >= CHAR_ZERO && c <= CHAR_NINE;
+        }
+
+        private boolean isLetter(char c) {
+            return (c >= CHAR_A_LOWER && c <= CHAR_Z_LOWER) ||
+                   (c >= CHAR_A_UPPER && c <= CHAR_Z_UPPER);
+        }
+
+        private boolean isWhitespace(char c) {
+            return c == CHAR_SPACE || c == CHAR_TAB || c == CHAR_NEWLINE || c == CHAR_CR;
         }
     }
 

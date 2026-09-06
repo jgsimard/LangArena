@@ -1,7 +1,6 @@
 from helper import Helper
 from benchmark import Benchmark, Config
 
-
 comptime BF_INC = 0
 comptime BF_DEC = 1
 comptime BF_PREV = 2

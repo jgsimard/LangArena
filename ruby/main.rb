@@ -2203,36 +2203,57 @@ module Calculator
     attr_reader :expressions
 
     class Parser
+
+      CHAR_EOF = 0
+      CHAR_PLUS = "+".ord
+      CHAR_MINUS = "-".ord
+      CHAR_STAR = "*".ord
+      CHAR_SLASH = "/".ord
+      CHAR_PERCENT = "%".ord
+      CHAR_LPAREN = "(".ord
+      CHAR_RPAREN = ")".ord
+      CHAR_EQUALS = "=".ord
+      CHAR_ZERO = "0".ord
+      CHAR_NINE = "9".ord
+      CHAR_A_LOWER = "a".ord
+      CHAR_Z_LOWER = "z".ord
+      CHAR_A_UPPER = "A".ord
+      CHAR_Z_UPPER = "Z".ord
+      CHAR_SPACE = " ".ord
+      CHAR_TAB = "\t".ord
+      CHAR_NEWLINE = "\n".ord
+      CHAR_CR = "\r".ord
+
       attr_reader :expressions
 
       def initialize(input_str)
         @input = input_str
+        @bytes = @input.bytes
         @pos = 0
-        @chars = @input.chars
-        @len = @chars.length
-        @current_char = @len > 0 ? @chars[0] : "\\0"
+        @len = @bytes.length
+        @current_byte = @len > 0 ? @bytes[0] : CHAR_EOF
         @expressions = []
       end
 
       def advance
         @pos += 1
-        @current_char = (@pos >= @len) ? "\\0" : @chars[@pos]
+        if @pos >= @len
+          @current_byte = CHAR_EOF
+        else
+          @current_byte = @bytes[@pos]
+        end
       end
 
       def skip_whitespace
-        while @current_char != "\\0" &&
-            (@current_char == " " ||
-              @current_char == "\t" ||
-              @current_char == "\n" ||
-              @current_char == "\r")
+        while is_whitespace(@current_byte)
           advance
         end
       end
 
       def parse_number
         v = 0
-        while @current_char != "\\0" && @current_char >= "0" && @current_char <= "9"
-          v = v * 10 + (@current_char.ord - "0".ord)
+        while is_digit(@current_byte)
+          v = v * 10 + (@current_byte - CHAR_ZERO)
           advance
         end
 
@@ -2241,17 +2262,14 @@ module Calculator
 
       def parse_variable
         start = @pos
-        while @current_char != "\\0" &&
-            ((@current_char >= "a" && @current_char <= "z") ||
-              (@current_char >= "A" && @current_char <= "Z") ||
-              (@current_char >= "0" && @current_char <= "9"))
+        while is_letter(@current_byte) || is_digit(@current_byte)
           advance
         end
 
-        var_name = @input[start...@pos]
+        var_name = @input.byteslice(start, @pos - start)
 
         skip_whitespace
-        if @current_char == "="
+        if @current_byte == CHAR_EQUALS
           advance
           expr = parse_expression
           return Ast::Assignment.new(var_name, expr)
@@ -2262,22 +2280,20 @@ module Calculator
 
       def parse_factor
         skip_whitespace
-        return Ast::Number.new(0) if @current_char == "\\0"
 
-        if @current_char >= "0" && @current_char <= "9"
+        if is_digit(@current_byte)
           return parse_number
         end
 
-        if (@current_char >= "a" && @current_char <= "z") ||
-            (@current_char >= "A" && @current_char <= "Z")
+        if is_letter(@current_byte)
           return parse_variable
         end
 
-        if @current_char == "("
+        if @current_byte == CHAR_LPAREN
           advance
           node = parse_expression
           skip_whitespace
-          if @current_char == ")"
+          if @current_byte == CHAR_RPAREN
             advance
           end
 
@@ -2291,12 +2307,11 @@ module Calculator
       def parse_term
         node = parse_factor
 
-        while true
+        loop do
           skip_whitespace
-          break if @current_char == "\\0"
 
-          if @current_char == "*" || @current_char == "/" || @current_char == "%"
-            op = @current_char
+          if @current_byte == CHAR_STAR || @current_byte == CHAR_SLASH || @current_byte == CHAR_PERCENT
+            op = @current_byte.chr
             advance
             right = parse_factor
             node = Ast::BinaryOp.new(op, node, right)
@@ -2311,12 +2326,11 @@ module Calculator
       def parse_expression
         node = parse_term
 
-        while true
+        loop do
           skip_whitespace
-          break if @current_char == "\\0"
 
-          if @current_char == "+" || @current_char == "-"
-            op = @current_char
+          if @current_byte == CHAR_PLUS || @current_byte == CHAR_MINUS
+            op = @current_byte.chr
             advance
             right = parse_term
             node = Ast::BinaryOp.new(op, node, right)
@@ -2330,13 +2344,34 @@ module Calculator
 
       def parse
         @expressions.clear
-        while @current_char != "\\0"
+        while @current_byte != CHAR_EOF
           skip_whitespace
-          break if @current_char == "\\0"
+          break if @current_byte == CHAR_EOF
           @expressions << parse_expression
+
+          skip_whitespace
+          while @current_byte == CHAR_NEWLINE
+            advance
+            skip_whitespace
+          end
         end
 
         @expressions
+      end
+
+      private
+
+      def is_digit(byte)
+        byte >= CHAR_ZERO && byte <= CHAR_NINE
+      end
+
+      def is_letter(byte)
+        (byte >= CHAR_A_LOWER && byte <= CHAR_Z_LOWER) ||
+          (byte >= CHAR_A_UPPER && byte <= CHAR_Z_UPPER)
+      end
+
+      def is_whitespace(byte)
+        byte == CHAR_SPACE || byte == CHAR_TAB || byte == CHAR_NEWLINE || byte == CHAR_CR
       end
     end
 

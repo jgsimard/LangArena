@@ -2340,6 +2340,26 @@ class CSVParse extends Benchmark
     }
 }
 
+define('CHAR_EOF', 0);
+define('CHAR_PLUS', ord('+'));
+define('CHAR_MINUS', ord('-'));
+define('CHAR_STAR', ord('*'));
+define('CHAR_SLASH', ord('/'));
+define('CHAR_PERCENT', ord('%'));
+define('CHAR_LPAREN', ord('('));
+define('CHAR_RPAREN', ord(')'));
+define('CHAR_EQUALS', ord('='));
+define('CHAR_ZERO', ord('0'));
+define('CHAR_NINE', ord('9'));
+define('CHAR_A_LOWER', ord('a'));
+define('CHAR_Z_LOWER', ord('z'));
+define('CHAR_A_UPPER', ord('A'));
+define('CHAR_Z_UPPER', ord('Z'));
+define('CHAR_SPACE', ord(' '));
+define('CHAR_TAB', ord("\t"));
+define('CHAR_NEWLINE', ord("\n"));
+define('CHAR_CR', ord("\r"));
+
 abstract class CalcNode {}
 
 class CalcNumber extends CalcNode
@@ -2393,7 +2413,7 @@ class CalculatorParser
     private string $input;
     private int $pos;
     private int $len;
-    private string $currentChar;
+    private int $currentByte;
     public array $expressions;
 
     public function __construct(string $input)
@@ -2401,7 +2421,7 @@ class CalculatorParser
         $this->input = $input;
         $this->pos = 0;
         $this->len = strlen($input);
-        $this->currentChar = $this->len > 0 ? $input[0] : "\0";
+        $this->currentByte = $this->len > 0 ? ord($input[0]) : CHAR_EOF;
         $this->expressions = [];
     }
 
@@ -2409,19 +2429,15 @@ class CalculatorParser
     {
         $this->pos++;
         if ($this->pos >= $this->len) {
-            $this->currentChar = "\0";
+            $this->currentByte = CHAR_EOF;
         } else {
-            $this->currentChar = $this->input[$this->pos];
+            $this->currentByte = ord($this->input[$this->pos]);
         }
     }
 
     private function skipWhitespace(): void
     {
-        while ($this->currentChar !== "\0" &&
-            ($this->currentChar === ' ' ||
-                $this->currentChar === "\t" ||
-                $this->currentChar === "\n" ||
-                $this->currentChar === "\r")) {
+        while ($this->isWhitespace($this->currentByte)) {
             $this->advance();
         }
     }
@@ -2429,8 +2445,8 @@ class CalculatorParser
     private function parseNumber(): CalcNumber
     {
         $v = 0;
-        while ($this->currentChar !== "\0" && $this->currentChar >= '0' && $this->currentChar <= '9') {
-            $v = $v * 10 + (ord($this->currentChar) - ord('0'));
+        while ($this->isDigit($this->currentByte)) {
+            $v = $v * 10 + ($this->currentByte - CHAR_ZERO);
             $this->advance();
         }
         return new CalcNumber($v);
@@ -2439,17 +2455,14 @@ class CalculatorParser
     private function parseVariable(): CalcNode
     {
         $start = $this->pos;
-        while ($this->currentChar !== "\0" &&
-            (($this->currentChar >= 'a' && $this->currentChar <= 'z') ||
-                ($this->currentChar >= 'A' && $this->currentChar <= 'Z') ||
-                ($this->currentChar >= '0' && $this->currentChar <= '9'))) {
+        while ($this->isLetter($this->currentByte) || $this->isDigit($this->currentByte)) {
             $this->advance();
         }
 
         $varName = substr($this->input, $start, $this->pos - $start);
 
         $this->skipWhitespace();
-        if ($this->currentChar === '=') {
+        if ($this->currentByte === CHAR_EQUALS) {
             $this->advance();
             $expr = $this->parseExpression();
             return new CalcAssignment($varName, $expr);
@@ -2461,24 +2474,20 @@ class CalculatorParser
     private function parseFactor(): CalcNode
     {
         $this->skipWhitespace();
-        if ($this->currentChar === "\0") {
-            return new CalcNumber(0);
-        }
 
-        if ($this->currentChar >= '0' && $this->currentChar <= '9') {
+        if ($this->isDigit($this->currentByte)) {
             return $this->parseNumber();
         }
 
-        if (($this->currentChar >= 'a' && $this->currentChar <= 'z') ||
-                ($this->currentChar >= 'A' && $this->currentChar <= 'Z')) {
+        if ($this->isLetter($this->currentByte)) {
             return $this->parseVariable();
         }
 
-        if ($this->currentChar === '(') {
+        if ($this->currentByte === CHAR_LPAREN) {
             $this->advance();
             $node = $this->parseExpression();
             $this->skipWhitespace();
-            if ($this->currentChar === ')') {
+            if ($this->currentByte === CHAR_RPAREN) {
                 $this->advance();
             }
             return $node;
@@ -2494,11 +2503,9 @@ class CalculatorParser
 
         while (true) {
             $this->skipWhitespace();
-            if ($this->currentChar === "\0")
-                break;
 
-            if ($this->currentChar === '*' || $this->currentChar === '/' || $this->currentChar === '%') {
-                $op = $this->currentChar;
+            if ($this->currentByte === CHAR_STAR || $this->currentByte === CHAR_SLASH || $this->currentByte === CHAR_PERCENT) {
+                $op = chr($this->currentByte);
                 $this->advance();
                 $right = $this->parseFactor();
                 $node = new CalcBinaryOp($op, $node, $right);
@@ -2516,11 +2523,9 @@ class CalculatorParser
 
         while (true) {
             $this->skipWhitespace();
-            if ($this->currentChar === "\0")
-                break;
 
-            if ($this->currentChar === '+' || $this->currentChar === '-') {
-                $op = $this->currentChar;
+            if ($this->currentByte === CHAR_PLUS || $this->currentByte === CHAR_MINUS) {
+                $op = chr($this->currentByte);
                 $this->advance();
                 $right = $this->parseTerm();
                 $node = new CalcBinaryOp($op, $node, $right);
@@ -2535,12 +2540,34 @@ class CalculatorParser
     public function parse(): void
     {
         $this->expressions = [];
-        while ($this->currentChar !== "\0") {
+        while ($this->currentByte !== CHAR_EOF) {
             $this->skipWhitespace();
-            if ($this->currentChar === "\0")
+            if ($this->currentByte === CHAR_EOF)
                 break;
             $this->expressions[] = $this->parseExpression();
+
+            $this->skipWhitespace();
+            while ($this->currentByte === CHAR_NEWLINE) {
+                $this->advance();
+                $this->skipWhitespace();
+            }
         }
+    }
+
+    private function isDigit(int $byte): bool
+    {
+        return $byte >= CHAR_ZERO && $byte <= CHAR_NINE;
+    }
+
+    private function isLetter(int $byte): bool
+    {
+        return ($byte >= CHAR_A_LOWER && $byte <= CHAR_Z_LOWER) ||
+            ($byte >= CHAR_A_UPPER && $byte <= CHAR_Z_UPPER);
+    }
+
+    private function isWhitespace(int $byte): bool
+    {
+        return $byte === CHAR_SPACE || $byte === CHAR_TAB || $byte === CHAR_NEWLINE || $byte === CHAR_CR;
     }
 }
 

@@ -2,6 +2,27 @@ using System.Text;
 
 public class CalculatorAst : Benchmark
 {
+
+    private const char CHAR_EOF = '\0';
+    private const char CHAR_PLUS = '+';
+    private const char CHAR_MINUS = '-';
+    private const char CHAR_STAR = '*';
+    private const char CHAR_SLASH = '/';
+    private const char CHAR_PERCENT = '%';
+    private const char CHAR_LPAREN = '(';
+    private const char CHAR_RPAREN = ')';
+    private const char CHAR_EQUALS = '=';
+    private const char CHAR_ZERO = '0';
+    private const char CHAR_NINE = '9';
+    private const char CHAR_A_LOWER = 'a';
+    private const char CHAR_Z_LOWER = 'z';
+    private const char CHAR_A_UPPER = 'A';
+    private const char CHAR_Z_UPPER = 'Z';
+    private const char CHAR_SPACE = ' ';
+    private const char CHAR_TAB = '\t';
+    private const char CHAR_NEWLINE = '\n';
+    private const char CHAR_CR = '\r';
+
     public abstract class Node { }
 
     public class Number : Node
@@ -93,7 +114,6 @@ public class CalculatorAst : Benchmark
         private readonly string _input;
         private int _pos;
         private char _currentChar;
-        private readonly char[] _chars;
 
         public List<Node> Expressions { get; } = new();
 
@@ -101,19 +121,25 @@ public class CalculatorAst : Benchmark
         {
             _input = input;
             _pos = 0;
-            _chars = input.ToCharArray();
-            _currentChar = _chars.Length > 0 ? _chars[0] : '\0';
+            _currentChar = _input.Length > 0 ? _input[0] : CHAR_EOF;
         }
 
         public List<Node> Parse()
         {
-            while (_pos < _input.Length)
+            while (_currentChar != CHAR_EOF)
             {
                 SkipWhitespace();
-                if (_pos >= _input.Length) break;
+                if (_currentChar == CHAR_EOF) break;
 
                 var expr = ParseExpression();
                 if (expr != null) Expressions.Add(expr);
+
+                SkipWhitespace();
+                while (_currentChar == CHAR_NEWLINE)
+                {
+                    Advance();
+                    SkipWhitespace();
+                }
             }
             return Expressions;
         }
@@ -122,12 +148,11 @@ public class CalculatorAst : Benchmark
         {
             var node = ParseTerm();
 
-            while (_pos < _input.Length)
+            while (true)
             {
                 SkipWhitespace();
-                if (_pos >= _input.Length) break;
 
-                if (_currentChar == '+' || _currentChar == '-')
+                if (_currentChar == CHAR_PLUS || _currentChar == CHAR_MINUS)
                 {
                     char op = _currentChar;
                     Advance();
@@ -144,12 +169,11 @@ public class CalculatorAst : Benchmark
         {
             var node = ParseFactor();
 
-            while (_pos < _input.Length)
+            while (true)
             {
                 SkipWhitespace();
-                if (_pos >= _input.Length) break;
 
-                if (_currentChar == '*' || _currentChar == '/' || _currentChar == '%')
+                if (_currentChar == CHAR_STAR || _currentChar == CHAR_SLASH || _currentChar == CHAR_PERCENT)
                 {
                     char op = _currentChar;
                     Advance();
@@ -165,29 +189,30 @@ public class CalculatorAst : Benchmark
         private Node ParseFactor()
         {
             SkipWhitespace();
-            if (_pos >= _input.Length) return new Number(0);
 
-            switch (_currentChar)
+            if (IsDigit(_currentChar)) return ParseNumber();
+            if (IsLetter(_currentChar)) return ParseVariable();
+
+            if (_currentChar == CHAR_LPAREN)
             {
-                case >= '0' and <= '9': return ParseNumber();
-                case >= 'a' and <= 'z': return ParseVariable();
-                case '(':
-                    Advance();
-                    var node = ParseExpression();
-                    SkipWhitespace();
-                    if (_currentChar == ')') Advance();
-                    return node;
-                default: return new Number(0);
+                Advance();
+                var node = ParseExpression();
+                SkipWhitespace();
+                if (_currentChar == CHAR_RPAREN) Advance();
+                return node;
             }
+
+            Advance();
+            return new Number(0);
         }
 
         private Node ParseNumber()
         {
             long value = 0;
 
-            while (_pos < _input.Length && char.IsDigit(_currentChar))
+            while (IsDigit(_currentChar))
             {
-                value = value * 10 + (_currentChar - '0');
+                value = value * 10 + (_currentChar - CHAR_ZERO);
                 Advance();
             }
 
@@ -198,16 +223,15 @@ public class CalculatorAst : Benchmark
         {
             int start = _pos;
 
-            while (_pos < _input.Length &&
-                  (char.IsLetterOrDigit(_currentChar) || _currentChar == '_'))
+            while (IsLetter(_currentChar) || IsDigit(_currentChar))
             {
                 Advance();
             }
 
-            string varName = _input[start.._pos];
+            string varName = _input.Substring(start, _pos - start);
 
             SkipWhitespace();
-            if (_currentChar == '=')
+            if (_currentChar == CHAR_EQUALS)
             {
                 Advance();
                 var expr = ParseExpression();
@@ -220,14 +244,20 @@ public class CalculatorAst : Benchmark
         private void Advance()
         {
             _pos++;
-            if (_pos >= _input.Length) _currentChar = '\0';
-            else _currentChar = _chars[_pos];
+            if (_pos >= _input.Length) _currentChar = CHAR_EOF;
+            else _currentChar = _input[_pos];
         }
 
         private void SkipWhitespace()
         {
-            while (_pos < _input.Length && char.IsWhiteSpace(_currentChar)) Advance();
+            while (IsWhitespace(_currentChar)) Advance();
         }
+
+        private static bool IsDigit(char c) => c >= CHAR_ZERO && c <= CHAR_NINE;
+        private static bool IsLetter(char c) =>
+            (c >= CHAR_A_LOWER && c <= CHAR_Z_LOWER) || (c >= CHAR_A_UPPER && c <= CHAR_Z_UPPER);
+        private static bool IsWhitespace(char c) =>
+            c == CHAR_SPACE || c == CHAR_TAB || c == CHAR_NEWLINE || c == CHAR_CR;
     }
 
     public override void Run(long IterationId)

@@ -9,6 +9,29 @@ import std.range;
 import benchmark;
 import helper;
 
+private enum : char
+{
+    CHAR_EOF = '\0',
+    CHAR_PLUS = '+',
+    CHAR_MINUS = '-',
+    CHAR_STAR = '*',
+    CHAR_SLASH = '/',
+    CHAR_PERCENT = '%',
+    CHAR_LPAREN = '(',
+    CHAR_RPAREN = ')',
+    CHAR_EQUALS = '=',
+    CHAR_ZERO = '0',
+    CHAR_NINE = '9',
+    CHAR_A_LOWER = 'a',
+    CHAR_Z_LOWER = 'z',
+    CHAR_A_UPPER = 'A',
+    CHAR_Z_UPPER = 'Z',
+    CHAR_SPACE = ' ',
+    CHAR_TAB = '\t',
+    CHAR_NEWLINE = '\n',
+    CHAR_CR = '\r',
+}
+
 class CalculatorAst : Benchmark
 {
 
@@ -67,15 +90,32 @@ private:
     private:
         string input;
         size_t pos;
+        size_t len;
         char currentChar;
         Node[] expressions;
+
+        bool isDigit(char c)
+        {
+            return c >= CHAR_ZERO && c <= CHAR_NINE;
+        }
+
+        bool isLetter(char c)
+        {
+            return (c >= CHAR_A_LOWER && c <= CHAR_Z_LOWER) || (c >= CHAR_A_UPPER
+                    && c <= CHAR_Z_UPPER);
+        }
+
+        bool isWhitespace(char c)
+        {
+            return c == CHAR_SPACE || c == CHAR_TAB || c == CHAR_NEWLINE || c == CHAR_CR;
+        }
 
         void advance()
         {
             pos++;
-            if (pos >= input.length)
+            if (pos >= len)
             {
-                currentChar = '\0';
+                currentChar = CHAR_EOF;
             }
             else
             {
@@ -85,8 +125,7 @@ private:
 
         void skipWhitespace()
         {
-            while (currentChar != '\0' && (currentChar == ' '
-                    || currentChar == '\t' || currentChar == '\n' || currentChar == '\r'))
+            while (isWhitespace(currentChar))
             {
                 advance();
             }
@@ -95,9 +134,9 @@ private:
         Node parseNumber()
         {
             long v = 0;
-            while (currentChar != '\0' && currentChar >= '0' && currentChar <= '9')
+            while (isDigit(currentChar))
             {
-                v = v * 10 + (currentChar - '0');
+                v = v * 10 + (currentChar - CHAR_ZERO);
                 advance();
             }
             return new Number(v);
@@ -106,9 +145,7 @@ private:
         Node parseVariable()
         {
             size_t start = pos;
-            while (currentChar != '\0' && ((currentChar >= 'a' && currentChar <= 'z')
-                    || (currentChar >= 'A' && currentChar <= 'Z')
-                    || (currentChar >= '0' && currentChar <= '9') || currentChar == '_'))
+            while (isLetter(currentChar) || isDigit(currentChar))
             {
                 advance();
             }
@@ -116,7 +153,7 @@ private:
             string varName = input[start .. pos];
 
             skipWhitespace();
-            if (currentChar == '=')
+            if (currentChar == CHAR_EQUALS)
             {
                 advance();
                 auto expr = parseExpression();
@@ -129,34 +166,30 @@ private:
         Node parseFactor()
         {
             skipWhitespace();
-            if (currentChar == '\0')
-            {
-                return new Number(0);
-            }
 
-            if (currentChar >= '0' && currentChar <= '9')
+            if (isDigit(currentChar))
             {
                 return parseNumber();
             }
 
-            if ((currentChar >= 'a' && currentChar <= 'z') || (currentChar >= 'A'
-                    && currentChar <= 'Z') || currentChar == '_')
+            if (isLetter(currentChar))
             {
                 return parseVariable();
             }
 
-            if (currentChar == '(')
+            if (currentChar == CHAR_LPAREN)
             {
                 advance();
                 auto node = parseExpression();
                 skipWhitespace();
-                if (currentChar == ')')
+                if (currentChar == CHAR_RPAREN)
                 {
                     advance();
                 }
                 return node;
             }
 
+            advance();
             return new Number(0);
         }
 
@@ -167,10 +200,9 @@ private:
             while (true)
             {
                 skipWhitespace();
-                if (currentChar == '\0')
-                    break;
 
-                if (currentChar == '*' || currentChar == '/' || currentChar == '%')
+                if (currentChar == CHAR_STAR || currentChar == CHAR_SLASH
+                        || currentChar == CHAR_PERCENT)
                 {
                     char op = currentChar;
                     advance();
@@ -193,10 +225,8 @@ private:
             while (true)
             {
                 skipWhitespace();
-                if (currentChar == '\0')
-                    break;
 
-                if (currentChar == '+' || currentChar == '-')
+                if (currentChar == CHAR_PLUS || currentChar == CHAR_MINUS)
                 {
                     char op = currentChar;
                     advance();
@@ -217,18 +247,26 @@ private:
         {
             input = inputStr;
             pos = 0;
-            currentChar = input.length > 0 ? input[0] : '\0';
+            len = input.length;
+            currentChar = len > 0 ? input[0] : CHAR_EOF;
         }
 
         Node[] parse()
         {
             expressions = [];
-            while (currentChar != '\0')
+            while (currentChar != CHAR_EOF)
             {
                 skipWhitespace();
-                if (currentChar == '\0')
+                if (currentChar == CHAR_EOF)
                     break;
                 expressions ~= parseExpression();
+
+                skipWhitespace();
+                while (currentChar == CHAR_NEWLINE)
+                {
+                    advance();
+                    skipWhitespace();
+                }
             }
             return expressions;
         }

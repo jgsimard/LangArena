@@ -7,6 +7,26 @@ import std::core::mem;
 import std::core::string;
 import std::collections::map;
 
+const char CHAR_EOF     = 0;
+const char CHAR_PLUS    = '+';
+const char CHAR_MINUS   = '-';
+const char CHAR_STAR    = '*';
+const char CHAR_SLASH   = '/';
+const char CHAR_PERCENT = '%';
+const char CHAR_LPAREN  = '(';
+const char CHAR_RPAREN  = ')';
+const char CHAR_EQUALS  = '=';
+const char CHAR_ZERO    = '0';
+const char CHAR_NINE    = '9';
+const char CHAR_A_LOWER = 'a';
+const char CHAR_Z_LOWER = 'z';
+const char CHAR_A_UPPER = 'A';
+const char CHAR_Z_UPPER = 'Z';
+const char CHAR_SPACE   = ' ';
+const char CHAR_TAB     = '\t';
+const char CHAR_NEWLINE = '\n';
+const char CHAR_CR      = '\r';
+
 enum AstNodeType
 {
 	AST_NUMBER,
@@ -112,6 +132,7 @@ struct CalculatorAstParser
 {
 	String input;
 	usz pos;
+	usz len;
 	char current_char;
 }
 
@@ -119,27 +140,41 @@ fn void parser_init(CalculatorAstParser* parser, String input)
 {
 	parser.input = input;
 	parser.pos = 0;
-	parser.current_char = input.len > 0 ? input[0] : 0;
+	parser.len = input.len;
+	parser.current_char = parser.len > 0 ? input[0] : CHAR_EOF;
+}
+
+fn bool is_digit(char c)
+{
+	return c >= CHAR_ZERO && c <= CHAR_NINE;
+}
+
+fn bool is_letter(char c)
+{
+	return (c >= CHAR_A_LOWER && c <= CHAR_Z_LOWER) || (c >= CHAR_A_UPPER && c <= CHAR_Z_UPPER);
+}
+
+fn bool is_whitespace(char c)
+{
+	return c == CHAR_SPACE || c == CHAR_TAB || c == CHAR_NEWLINE || c == CHAR_CR;
 }
 
 fn void parser_advance(CalculatorAstParser* parser)
 {
 	parser.pos++;
-	if (parser.pos < parser.input.len)
+	if (parser.pos >= parser.len)
 	{
-		parser.current_char = parser.input[parser.pos];
+		parser.current_char = CHAR_EOF;
 	}
 	else
 	{
-		parser.current_char = 0;
+		parser.current_char = parser.input[parser.pos];
 	}
 }
 
 fn void parser_skip_whitespace(CalculatorAstParser* parser)
 {
-	while (parser.current_char
-		&& (parser.current_char == ' ' || parser.current_char == '\t' || parser.current_char == '\n'
-			|| parser.current_char == '\r'))
+	while (is_whitespace(parser.current_char))
 	{
 		parser_advance(parser);
 	}
@@ -148,9 +183,9 @@ fn void parser_skip_whitespace(CalculatorAstParser* parser)
 fn AstNode* parser_parse_number(CalculatorAstParser* parser)
 {
 	long value = 0;
-	while (parser.current_char && parser.current_char.is_digit())
+	while (is_digit(parser.current_char))
 	{
-		value = value * 10 + (long)(parser.current_char - '0');
+		value = value * 10 + (long)(parser.current_char - CHAR_ZERO);
 		parser_advance(parser);
 	}
 	return ast_node_new_number(value);
@@ -159,7 +194,7 @@ fn AstNode* parser_parse_number(CalculatorAstParser* parser)
 fn AstNode* parser_parse_variable(CalculatorAstParser* parser)
 {
 	usz start = parser.pos;
-	while (parser.current_char && (parser.current_char.is_alpha() || parser.current_char.is_digit()))
+	while (is_letter(parser.current_char) || is_digit(parser.current_char))
 	{
 		parser_advance(parser);
 	}
@@ -169,7 +204,7 @@ fn AstNode* parser_parse_variable(CalculatorAstParser* parser)
 
 	parser_skip_whitespace(parser);
 
-	if (parser.current_char == '=')
+	if (parser.current_char == CHAR_EQUALS)
 	{
 		parser_advance(parser);
 		AstNode* expr = parser_parse_expression(parser);
@@ -186,9 +221,8 @@ fn AstNode* parser_parse_expression(CalculatorAstParser* parser)
 	while (true)
 	{
 		parser_skip_whitespace(parser);
-		if (!parser.current_char) break;
 
-		if (parser.current_char == '+' || parser.current_char == '-')
+		if (parser.current_char == CHAR_PLUS || parser.current_char == CHAR_MINUS)
 		{
 			char op = parser.current_char;
 			parser_advance(parser);
@@ -208,31 +242,28 @@ fn AstNode* parser_parse_factor(CalculatorAstParser* parser)
 {
 	parser_skip_whitespace(parser);
 
-	if (!parser.current_char)
-	{
-		return ast_node_new_number(0);
-	}
-	if (parser.current_char.is_digit())
+	if (is_digit(parser.current_char))
 	{
 		return parser_parse_number(parser);
 	}
-	if (parser.current_char.is_alpha())
+	if (is_letter(parser.current_char))
 	{
 		return parser_parse_variable(parser);
 	}
 
-	if (parser.current_char == '(')
+	if (parser.current_char == CHAR_LPAREN)
 	{
 		parser_advance(parser);
 		AstNode* node = parser_parse_expression(parser);
 		parser_skip_whitespace(parser);
-		if (parser.current_char == ')')
+		if (parser.current_char == CHAR_RPAREN)
 		{
 			parser_advance(parser);
 		}
 		return node;
 	}
 
+	parser_advance(parser);
 	return ast_node_new_number(0);
 }
 
@@ -243,9 +274,9 @@ fn AstNode* parser_parse_term(CalculatorAstParser* parser)
 	while (true)
 	{
 		parser_skip_whitespace(parser);
-		if (!parser.current_char) break;
 
-		if (parser.current_char == '*' || parser.current_char == '/' || parser.current_char == '%')
+		if (parser.current_char == CHAR_STAR || parser.current_char == CHAR_SLASH
+			|| parser.current_char == CHAR_PERCENT)
 		{
 			char op = parser.current_char;
 			parser_advance(parser);
@@ -263,10 +294,10 @@ fn AstNode* parser_parse_term(CalculatorAstParser* parser)
 
 fn void parser_parse_all(CalculatorAstParser* parser, CalculatorAstData* data)
 {
-	while (parser.current_char)
+	while (parser.current_char != CHAR_EOF)
 	{
 		parser_skip_whitespace(parser);
-		if (!parser.current_char) break;
+		if (parser.current_char == CHAR_EOF) break;
 
 		if (data.expressions_count >= data.expressions_capacity)
 		{
@@ -276,6 +307,13 @@ fn void parser_parse_all(CalculatorAstParser* parser, CalculatorAstData* data)
 
 		data.expressions[data.expressions_count] = parser_parse_expression(parser);
 		data.expressions_count++;
+
+		parser_skip_whitespace(parser);
+		while (parser.current_char == CHAR_NEWLINE)
+		{
+			parser_advance(parser);
+			parser_skip_whitespace(parser);
+		}
 	}
 }
 

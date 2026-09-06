@@ -73,23 +73,9 @@ pub const CalculatorAst = struct {
         var parser = shared.Parser.init(arena_allocator, self.text);
         defer parser.deinit();
 
-        while (parser.current_char != 0) {
-            parser.skipWhitespace();
-            if (parser.current_char == 0) break;
-
-            const expr = parser.parseExpression() catch {
-                return;
-            };
-
-            expressions.append(arena_allocator, expr) catch {
-                return;
-            };
-
-            parser.skipWhitespace();
-            if (parser.current_char == '\n' or parser.current_char == ';') {
-                parser.advance();
-            }
-        }
+        parser.parse(&expressions) catch {
+            return;
+        };
 
         self.result_val +%= @as(u32, @intCast(expressions.items.len));
 

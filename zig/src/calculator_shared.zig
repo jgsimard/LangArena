@@ -1,6 +1,26 @@
 const std = @import("std");
 const Helper = @import("helper.zig").Helper;
 
+const CHAR_EOF: u8 = 0;
+const CHAR_PLUS: u8 = '+';
+const CHAR_MINUS: u8 = '-';
+const CHAR_STAR: u8 = '*';
+const CHAR_SLASH: u8 = '/';
+const CHAR_PERCENT: u8 = '%';
+const CHAR_LPAREN: u8 = '(';
+const CHAR_RPAREN: u8 = ')';
+const CHAR_EQUALS: u8 = '=';
+const CHAR_ZERO: u8 = '0';
+const CHAR_NINE: u8 = '9';
+const CHAR_A_LOWER: u8 = 'a';
+const CHAR_Z_LOWER: u8 = 'z';
+const CHAR_A_UPPER: u8 = 'A';
+const CHAR_Z_UPPER: u8 = 'Z';
+const CHAR_SPACE: u8 = ' ';
+const CHAR_TAB: u8 = '\t';
+const CHAR_NEWLINE: u8 = '\n';
+const CHAR_CR: u8 = '\r';
+
 pub const Number = struct {
     value: i64,
 };
@@ -33,14 +53,16 @@ pub const Parser = struct {
     arena_allocator: std.mem.Allocator,
     input: []const u8,
     pos: usize = 0,
-    current_char: u8 = 0,
+    len: usize,
+    current_byte: u8 = CHAR_EOF,
 
     pub fn init(arena_allocator: std.mem.Allocator, input: []const u8) Parser {
         return Parser{
             .arena_allocator = arena_allocator,
             .input = input,
             .pos = 0,
-            .current_char = if (input.len > 0) input[0] else 0,
+            .len = input.len,
+            .current_byte = if (input.len > 0) input[0] else CHAR_EOF,
         };
     }
 
@@ -50,23 +72,23 @@ pub const Parser = struct {
 
     pub fn advance(self: *Parser) void {
         self.pos += 1;
-        if (self.pos >= self.input.len) {
-            self.current_char = 0;
+        if (self.pos >= self.len) {
+            self.current_byte = CHAR_EOF;
         } else {
-            self.current_char = self.input[self.pos];
+            self.current_byte = self.input[self.pos];
         }
     }
 
     pub fn skipWhitespace(self: *Parser) void {
-        while (self.current_char != 0 and std.ascii.isWhitespace(self.current_char)) {
+        while (self.isWhitespace(self.current_byte)) {
             self.advance();
         }
     }
 
     pub fn parseNumber(self: *Parser) ParserError!*Node {
         var value: i64 = 0;
-        while (self.current_char != 0 and std.ascii.isDigit(self.current_char)) {
-            value = value * 10 + @as(i64, self.current_char - '0');
+        while (self.isDigit(self.current_byte)) {
+            value = value * 10 + @as(i64, self.current_byte - CHAR_ZERO);
             self.advance();
         }
         const node = try self.arena_allocator.create(Node);
@@ -76,10 +98,7 @@ pub const Parser = struct {
 
     pub fn parseVariable(self: *Parser) ParserError!*Node {
         const start = self.pos;
-        while (self.current_char != 0 and
-            (std.ascii.isAlphabetic(self.current_char) or
-                std.ascii.isDigit(self.current_char)))
-        {
+        while (self.isLetter(self.current_byte) or self.isDigit(self.current_byte)) {
             self.advance();
         }
 
@@ -87,7 +106,7 @@ pub const Parser = struct {
         const name_copy = try self.arena_allocator.dupe(u8, var_name);
 
         self.skipWhitespace();
-        if (self.current_char == '=') {
+        if (self.current_byte == CHAR_EQUALS) {
             self.advance();
             self.skipWhitespace();
             const expr = try self.parseExpression();
@@ -108,31 +127,27 @@ pub const Parser = struct {
 
     pub fn parseFactor(self: *Parser) ParserError!*Node {
         self.skipWhitespace();
-        if (self.current_char == 0) {
-            const node = try self.arena_allocator.create(Node);
-            node.* = Node{ .number = Number{ .value = 0 } };
-            return node;
-        }
 
-        if (std.ascii.isDigit(self.current_char)) {
+        if (self.isDigit(self.current_byte)) {
             return try self.parseNumber();
         }
 
-        if (std.ascii.isAlphabetic(self.current_char)) {
+        if (self.isLetter(self.current_byte)) {
             return try self.parseVariable();
         }
 
-        if (self.current_char == '(') {
+        if (self.current_byte == CHAR_LPAREN) {
             self.advance();
             self.skipWhitespace();
             const node = try self.parseExpression();
             self.skipWhitespace();
-            if (self.current_char == ')') {
+            if (self.current_byte == CHAR_RPAREN) {
                 self.advance();
             }
             return node;
         }
 
+        self.advance();
         const node = try self.arena_allocator.create(Node);
         node.* = Node{ .number = Number{ .value = 0 } };
         return node;
@@ -143,10 +158,9 @@ pub const Parser = struct {
 
         while (true) {
             self.skipWhitespace();
-            if (self.current_char == 0) break;
 
-            if (self.current_char == '*' or self.current_char == '/' or self.current_char == '%') {
-                const op = self.current_char;
+            if (self.current_byte == CHAR_STAR or self.current_byte == CHAR_SLASH or self.current_byte == CHAR_PERCENT) {
+                const op = self.current_byte;
                 self.advance();
                 self.skipWhitespace();
                 const right = try self.parseFactor();
@@ -172,10 +186,9 @@ pub const Parser = struct {
 
         while (true) {
             self.skipWhitespace();
-            if (self.current_char == 0) break;
 
-            if (self.current_char == '+' or self.current_char == '-') {
-                const op = self.current_char;
+            if (self.current_byte == CHAR_PLUS or self.current_byte == CHAR_MINUS) {
+                const op = self.current_byte;
                 self.advance();
                 self.skipWhitespace();
                 const right = try self.parseTerm();
@@ -199,18 +212,32 @@ pub const Parser = struct {
     pub fn parse(self: *Parser, out_expressions: *std.ArrayListUnmanaged(*Node)) ParserError!void {
         out_expressions.clearRetainingCapacity();
 
-        while (self.current_char != 0) {
+        while (self.current_byte != CHAR_EOF) {
             self.skipWhitespace();
-            if (self.current_char == 0) break;
+            if (self.current_byte == CHAR_EOF) break;
 
             const expr = try self.parseExpression();
             try out_expressions.append(self.arena_allocator, expr);
 
             self.skipWhitespace();
-            if (self.current_char == '\n' or self.current_char == ';') {
+            while (self.current_byte == CHAR_NEWLINE) {
                 self.advance();
+                self.skipWhitespace();
             }
         }
+    }
+
+    fn isDigit(_: *Parser, byte: u8) bool {
+        return byte >= CHAR_ZERO and byte <= CHAR_NINE;
+    }
+
+    fn isLetter(_: *Parser, byte: u8) bool {
+        return (byte >= CHAR_A_LOWER and byte <= CHAR_Z_LOWER) or
+            (byte >= CHAR_A_UPPER and byte <= CHAR_Z_UPPER);
+    }
+
+    fn isWhitespace(_: *Parser, byte: u8) bool {
+        return byte == CHAR_SPACE or byte == CHAR_TAB or byte == CHAR_NEWLINE or byte == CHAR_CR;
     }
 };
 

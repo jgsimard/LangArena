@@ -58,10 +58,30 @@ public:
 private:
   class Parser {
   private:
-    const std::string input;
+    static constexpr char CHAR_EOF = '\0';
+    static constexpr char CHAR_PLUS = '+';
+    static constexpr char CHAR_MINUS = '-';
+    static constexpr char CHAR_STAR = '*';
+    static constexpr char CHAR_SLASH = '/';
+    static constexpr char CHAR_PERCENT = '%';
+    static constexpr char CHAR_LPAREN = '(';
+    static constexpr char CHAR_RPAREN = ')';
+    static constexpr char CHAR_EQUALS = '=';
+    static constexpr char CHAR_ZERO = '0';
+    static constexpr char CHAR_NINE = '9';
+    static constexpr char CHAR_A_LOWER = 'a';
+    static constexpr char CHAR_Z_LOWER = 'z';
+    static constexpr char CHAR_A_UPPER = 'A';
+    static constexpr char CHAR_Z_UPPER = 'Z';
+    static constexpr char CHAR_SPACE = ' ';
+    static constexpr char CHAR_TAB = '\t';
+    static constexpr char CHAR_NEWLINE = '\n';
+    static constexpr char CHAR_CR = '\r';
+
+    const std::string &input;
     size_t pos;
+    size_t len;
     char current_char;
-    std::vector<char> chars;
     std::vector<Node> expressions;
 
     void advance();
@@ -71,6 +91,20 @@ private:
     Node parse_factor();
     Node parse_term();
     Node parse_expression();
+
+    inline bool is_digit(char c) const {
+      return c >= CHAR_ZERO && c <= CHAR_NINE;
+    }
+
+    inline bool is_letter(char c) const {
+      return (c >= CHAR_A_LOWER && c <= CHAR_Z_LOWER) ||
+             (c >= CHAR_A_UPPER && c <= CHAR_Z_UPPER);
+    }
+
+    inline bool is_whitespace(char c) const {
+      return c == CHAR_SPACE || c == CHAR_TAB || c == CHAR_NEWLINE ||
+             c == CHAR_CR;
+    }
 
   public:
     Parser(const std::string &input_str);

@@ -1,7 +1,6 @@
 from helper import Helper
 from benchmark import Benchmark, Config
 
-
 comptime MAZE_WALL = 0
 comptime MAZE_SPACE = 1
 comptime MAZE_START = 2

@@ -2819,24 +2819,55 @@ class AssignmentNode extends Node2 {
   }
 }
 
+const CHAR_EOF = 0;
+const CHAR_PLUS = "+".charCodeAt(0);
+const CHAR_MINUS = "-".charCodeAt(0);
+const CHAR_STAR = "*".charCodeAt(0);
+const CHAR_SLASH = "/".charCodeAt(0);
+const CHAR_PERCENT = "%".charCodeAt(0);
+const CHAR_LPAREN = "(".charCodeAt(0);
+const CHAR_RPAREN = ")".charCodeAt(0);
+const CHAR_EQUALS = "=".charCodeAt(0);
+const CHAR_ZERO = "0".charCodeAt(0);
+const CHAR_NINE = "9".charCodeAt(0);
+const CHAR_A_LOWER = "a".charCodeAt(0);
+const CHAR_Z_LOWER = "z".charCodeAt(0);
+const CHAR_A_UPPER = "A".charCodeAt(0);
+const CHAR_Z_UPPER = "Z".charCodeAt(0);
+const CHAR_SPACE = " ".charCodeAt(0);
+const CHAR_TAB = "\t".charCodeAt(0);
+const CHAR_NEWLINE = "\n".charCodeAt(0);
+const CHAR_CR = "\r".charCodeAt(0);
+
 class Parser {
   private input: string;
+  private bytes: Uint8Array;
   private pos: number = 0;
-  private chars: string[];
-  private currentChar: string = "\0";
+  private len: number;
+  private currentByte: number = CHAR_EOF;
   public expressions: Node2[] = [];
 
   constructor(input: string) {
     this.input = input;
-    this.chars = Array.from(input);
-    this.currentChar = this.chars.length > 0 ? this.chars[0] : "\0";
+    this.bytes = new TextEncoder().encode(input);
+    this.len = this.bytes.length;
+    this.currentByte = this.len > 0 ? this.bytes[0] : CHAR_EOF;
   }
 
   parse(): void {
-    while (this.pos < this.chars.length) {
+    while (this.currentByte !== CHAR_EOF) {
+      this.skipWhitespace();
+      if (this.currentByte === CHAR_EOF) break;
+
       const expr = this.parseExpression();
       if (expr) {
         this.expressions.push(expr);
+      }
+
+      this.skipWhitespace();
+      while (this.currentByte === CHAR_NEWLINE) {
+        this.advance();
+        this.skipWhitespace();
       }
     }
   }
@@ -2844,12 +2875,11 @@ class Parser {
   private parseExpression(): Node2 {
     let node = this.parseTerm();
 
-    while (this.pos < this.chars.length) {
+    while (true) {
       this.skipWhitespace();
-      if (this.pos >= this.chars.length) break;
 
-      if (this.currentChar === "+" || this.currentChar === "-") {
-        const op = this.currentChar;
+      if (this.currentByte === CHAR_PLUS || this.currentByte === CHAR_MINUS) {
+        const op = String.fromCharCode(this.currentByte);
         this.advance();
         const right = this.parseTerm();
         node = new BinaryOpNode(op, node, right);
@@ -2864,12 +2894,15 @@ class Parser {
   private parseTerm(): Node2 {
     let node = this.parseFactor();
 
-    while (this.pos < this.chars.length) {
+    while (true) {
       this.skipWhitespace();
-      if (this.pos >= this.chars.length) break;
 
-      if (this.currentChar === "*" || this.currentChar === "/" || this.currentChar === "%") {
-        const op = this.currentChar;
+      if (
+        this.currentByte === CHAR_STAR ||
+        this.currentByte === CHAR_SLASH ||
+        this.currentByte === CHAR_PERCENT
+      ) {
+        const op = String.fromCharCode(this.currentByte);
         this.advance();
         const right = this.parseFactor();
         node = new BinaryOpNode(op, node, right);
@@ -2883,33 +2916,31 @@ class Parser {
 
   private parseFactor(): Node2 {
     this.skipWhitespace();
-    if (this.pos >= this.chars.length) {
-      return new NumberNode(0);
-    }
 
-    const char = this.currentChar;
+    const byte = this.currentByte;
 
-    if (char >= "0" && char <= "9") {
+    if (this.isDigit(byte)) {
       return this.parseNumber();
-    } else if ((char >= "a" && char <= "z") || (char >= "A" && char <= "Z")) {
+    } else if (this.isLetter(byte)) {
       return this.parseVariable();
-    } else if (char === "(") {
+    } else if (byte === CHAR_LPAREN) {
       this.advance();
       const node = this.parseExpression();
       this.skipWhitespace();
-      if (this.currentChar === ")") {
+      if (this.currentByte === CHAR_RPAREN) {
         this.advance();
       }
       return node;
     } else {
+      this.advance();
       return new NumberNode(0);
     }
   }
 
   private parseNumber(): Node2 {
     let value = 0;
-    while (this.pos < this.chars.length && this.isDigit(this.currentChar)) {
-      const digit = this.currentChar.charCodeAt(0) - "0".charCodeAt(0);
+    while (this.isDigit(this.currentByte)) {
+      const digit = this.currentByte - CHAR_ZERO;
       value = value * 10 + digit;
       this.advance();
     }
@@ -2918,16 +2949,13 @@ class Parser {
 
   private parseVariable(): Node2 {
     const start = this.pos;
-    while (
-      this.pos < this.chars.length &&
-      (this.isLetter(this.currentChar) || this.isDigit(this.currentChar))
-    ) {
+    while (this.isLetter(this.currentByte) || this.isDigit(this.currentByte)) {
       this.advance();
     }
     const varName = this.input.substring(start, this.pos);
 
     this.skipWhitespace();
-    if (this.currentChar === "=") {
+    if (this.currentByte === CHAR_EQUALS) {
       this.advance();
       const expr = this.parseExpression();
       return new AssignmentNode(varName, expr);
@@ -2938,29 +2966,32 @@ class Parser {
 
   private advance(): void {
     this.pos++;
-    if (this.pos >= this.chars.length) {
-      this.currentChar = "\0";
+    if (this.pos >= this.len) {
+      this.currentByte = CHAR_EOF;
     } else {
-      this.currentChar = this.chars[this.pos];
+      this.currentByte = this.bytes[this.pos];
     }
   }
 
   private skipWhitespace(): void {
-    while (this.pos < this.chars.length && this.isWhitespace(this.currentChar)) {
+    while (this.isWhitespace(this.currentByte)) {
       this.advance();
     }
   }
 
-  private isDigit(char: string): boolean {
-    return char >= "0" && char <= "9";
+  private isDigit(byte: number): boolean {
+    return byte >= CHAR_ZERO && byte <= CHAR_NINE;
   }
 
-  private isLetter(char: string): boolean {
-    return (char >= "a" && char <= "z") || (char >= "A" && char <= "Z");
+  private isLetter(byte: number): boolean {
+    return (
+      (byte >= CHAR_A_LOWER && byte <= CHAR_Z_LOWER) ||
+      (byte >= CHAR_A_UPPER && byte <= CHAR_Z_UPPER)
+    );
   }
 
-  private isWhitespace(char: string): boolean {
-    return char === " " || char === "\t" || char === "\n" || char === "\r";
+  private isWhitespace(byte: number): boolean {
+    return byte === CHAR_SPACE || byte === CHAR_TAB || byte === CHAR_NEWLINE || byte === CHAR_CR;
   }
 }
 
@@ -5395,9 +5426,9 @@ export class CsvParse extends Benchmark {
 
     for (const line of lines) {
       const fields = this.parseCsvLine(line);
-      const x = parseFloat(fields[1]); // индекс 1
-      const z = parseFloat(fields[3]); // индекс 3
-      const y = parseFloat(fields[5]); // индекс 5
+      const x = parseFloat(fields[1]);
+      const z = parseFloat(fields[3]);
+      const y = parseFloat(fields[5]);
       points.push({ x, y, z });
     }
 

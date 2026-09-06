@@ -4,28 +4,28 @@
 #include <sstream>
 
 CalculatorAst::Parser::Parser(const std::string &input_str)
-    : input(input_str), pos(0) {
-  for (char c : input_str)
-    chars.push_back(c);
-  current_char = chars.empty() ? '\0' : chars[0];
+    : input(input_str), pos(0), len(input_str.size()) {
+  current_char = len > 0 ? input[0] : CHAR_EOF;
 }
 
 void CalculatorAst::Parser::advance() {
-  pos += 1;
-  current_char = (pos >= chars.size()) ? '\0' : chars[pos];
+  pos++;
+  if (pos >= len) {
+    current_char = CHAR_EOF;
+  } else {
+    current_char = input[pos];
+  }
 }
 
 void CalculatorAst::Parser::skip_whitespace() {
-  while (current_char != '\0' &&
-         std::isspace(static_cast<unsigned char>(current_char)))
+  while (is_whitespace(current_char))
     advance();
 }
 
 CalculatorAst::Node CalculatorAst::Parser::parse_number() {
   int64_t v = 0;
-  while (current_char != '\0' &&
-         std::isdigit(static_cast<unsigned char>(current_char))) {
-    v = v * 10 + (current_char - '0');
+  while (is_digit(current_char)) {
+    v = v * 10 + (current_char - CHAR_ZERO);
     advance();
   }
   return Node(Number{v});
@@ -33,14 +33,12 @@ CalculatorAst::Node CalculatorAst::Parser::parse_number() {
 
 CalculatorAst::Node CalculatorAst::Parser::parse_variable() {
   size_t start = pos;
-  while (current_char != '\0' &&
-         (std::isalpha(static_cast<unsigned char>(current_char)) ||
-          std::isdigit(static_cast<unsigned char>(current_char))))
+  while (is_letter(current_char) || is_digit(current_char))
     advance();
   std::string var_name = input.substr(start, pos - start);
 
   skip_whitespace();
-  if (current_char == '=') {
+  if (current_char == CHAR_EQUALS) {
     advance();
     auto expr = parse_expression();
     return Node(std::make_unique<Assignment>(var_name, std::move(expr)));
@@ -50,30 +48,31 @@ CalculatorAst::Node CalculatorAst::Parser::parse_variable() {
 
 CalculatorAst::Node CalculatorAst::Parser::parse_factor() {
   skip_whitespace();
-  if (current_char == '\0')
-    return Node(Number{0});
-  if (std::isdigit(static_cast<unsigned char>(current_char)))
+
+  if (is_digit(current_char))
     return parse_number();
-  if (std::isalpha(static_cast<unsigned char>(current_char)))
+  if (is_letter(current_char))
     return parse_variable();
-  if (current_char == '(') {
+  if (current_char == CHAR_LPAREN) {
     advance();
     auto node = parse_expression();
     skip_whitespace();
-    if (current_char == ')')
+    if (current_char == CHAR_RPAREN)
       advance();
     return node;
   }
+  advance();
   return Node(Number{0});
 }
 
 CalculatorAst::Node CalculatorAst::Parser::parse_term() {
   auto node = parse_factor();
+
   while (true) {
     skip_whitespace();
-    if (current_char == '\0')
-      break;
-    if (current_char == '*' || current_char == '/' || current_char == '%') {
+
+    if (current_char == CHAR_STAR || current_char == CHAR_SLASH ||
+        current_char == CHAR_PERCENT) {
       char op = current_char;
       advance();
       auto right = parse_factor();
@@ -87,11 +86,11 @@ CalculatorAst::Node CalculatorAst::Parser::parse_term() {
 
 CalculatorAst::Node CalculatorAst::Parser::parse_expression() {
   auto node = parse_term();
+
   while (true) {
     skip_whitespace();
-    if (current_char == '\0')
-      break;
-    if (current_char == '+' || current_char == '-') {
+
+    if (current_char == CHAR_PLUS || current_char == CHAR_MINUS) {
       char op = current_char;
       advance();
       auto right = parse_term();
@@ -105,11 +104,19 @@ CalculatorAst::Node CalculatorAst::Parser::parse_expression() {
 
 std::vector<CalculatorAst::Node> CalculatorAst::Parser::parse() {
   expressions.clear();
-  while (current_char != '\0') {
+
+  while (current_char != CHAR_EOF) {
     skip_whitespace();
-    if (current_char == '\0')
+    if (current_char == CHAR_EOF)
       break;
+
     expressions.push_back(parse_expression());
+
+    skip_whitespace();
+    while (current_char == CHAR_NEWLINE) {
+      advance();
+      skip_whitespace();
+    }
   }
   return std::move(expressions);
 }

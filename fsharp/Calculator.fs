@@ -4,6 +4,27 @@ open System
 open System.Text
 open System.Collections.Generic
 
+module CharCodes =
+    let CHAR_EOF = '\000'
+    let CHAR_PLUS = '+'
+    let CHAR_MINUS = '-'
+    let CHAR_STAR = '*'
+    let CHAR_SLASH = '/'
+    let CHAR_PERCENT = '%'
+    let CHAR_LPAREN = '('
+    let CHAR_RPAREN = ')'
+    let CHAR_EQUALS = '='
+    let CHAR_ZERO = '0'
+    let CHAR_NINE = '9'
+    let CHAR_A_LOWER = 'a'
+    let CHAR_Z_LOWER = 'z'
+    let CHAR_A_UPPER = 'A'
+    let CHAR_Z_UPPER = 'Z'
+    let CHAR_SPACE = ' '
+    let CHAR_TAB = '\t'
+    let CHAR_NEWLINE = '\n'
+    let CHAR_CR = '\r'
+
 [<AbstractClass>]
 type Node() = class end
 
@@ -28,29 +49,40 @@ type Assignment(varName: string, expr: Node) =
 
 [<AllowNullLiteral>]
 type Parser(input: string) =
-    let chars = input.ToCharArray()
     let mutable pos = 0
-    let mutable currentChar = if chars.Length > 0 then chars.[0] else '\000'
+    let mutable currentChar = if input.Length > 0 then input.[0] else CharCodes.CHAR_EOF
     let expressions = List<Node>()
 
-    let advance () =
-        if pos < chars.Length then
-            pos <- pos + 1
+    let isDigit (char: char) =
+        char >= CharCodes.CHAR_ZERO && char <= CharCodes.CHAR_NINE
 
-            if pos < chars.Length then
-                currentChar <- chars.[pos]
-            else
-                currentChar <- '\000'
+    let isLetter (char: char) =
+        (char >= CharCodes.CHAR_A_LOWER && char <= CharCodes.CHAR_Z_LOWER)
+        || (char >= CharCodes.CHAR_A_UPPER && char <= CharCodes.CHAR_Z_UPPER)
+
+    let isWhitespace (char: char) =
+        char = CharCodes.CHAR_SPACE
+        || char = CharCodes.CHAR_TAB
+        || char = CharCodes.CHAR_NEWLINE
+        || char = CharCodes.CHAR_CR
+
+    let advance () =
+        pos <- pos + 1
+
+        if pos >= input.Length then
+            currentChar <- CharCodes.CHAR_EOF
+        else
+            currentChar <- input.[pos]
 
     let skipWhitespace () =
-        while pos < chars.Length && Char.IsWhiteSpace(currentChar) do
+        while isWhitespace currentChar do
             advance ()
 
     let rec parseNumber () =
         let mutable value = 0L
 
-        while pos < chars.Length && Char.IsDigit(currentChar) do
-            value <- value * 10L + int64 (currentChar - '0')
+        while isDigit currentChar do
+            value <- value * 10L + int64 (currentChar - CharCodes.CHAR_ZERO)
             advance ()
 
         Number(value) :> Node
@@ -58,14 +90,14 @@ type Parser(input: string) =
     let rec parseVariable () =
         let start = pos
 
-        while pos < chars.Length && (Char.IsLetterOrDigit(currentChar) || currentChar = '_') do
+        while isLetter currentChar || isDigit currentChar do
             advance ()
 
         let varName = input.Substring(start, pos - start)
 
         skipWhitespace ()
 
-        if pos < chars.Length && currentChar = '=' then
+        if currentChar = CharCodes.CHAR_EQUALS then
             advance ()
             let expr = parseExpression ()
             Assignment(varName, expr) :> Node
@@ -76,21 +108,16 @@ type Parser(input: string) =
         let mutable node = parseTerm ()
         let mutable continueLoop = true
 
-        while pos < chars.Length && continueLoop do
+        while continueLoop do
             skipWhitespace ()
 
-            if pos >= chars.Length then
-                continueLoop <- false
+            if currentChar = CharCodes.CHAR_PLUS || currentChar = CharCodes.CHAR_MINUS then
+                let op = currentChar
+                advance ()
+                let right = parseTerm ()
+                node <- BinaryOp(op, node, right) :> Node
             else
-                let ch = currentChar
-
-                if ch = '+' || ch = '-' then
-                    let op = ch
-                    advance ()
-                    let right = parseTerm ()
-                    node <- BinaryOp(op, node, right) :> Node
-                else
-                    continueLoop <- false
+                continueLoop <- false
 
         node
 
@@ -98,55 +125,58 @@ type Parser(input: string) =
         let mutable node = parseFactor ()
         let mutable continueLoop = true
 
-        while pos < chars.Length && continueLoop do
+        while continueLoop do
             skipWhitespace ()
 
-            if pos >= chars.Length then
-                continueLoop <- false
+            if
+                currentChar = CharCodes.CHAR_STAR
+                || currentChar = CharCodes.CHAR_SLASH
+                || currentChar = CharCodes.CHAR_PERCENT
+            then
+                let op = currentChar
+                advance ()
+                let right = parseFactor ()
+                node <- BinaryOp(op, node, right) :> Node
             else
-                let ch = currentChar
-
-                if ch = '*' || ch = '/' || ch = '%' then
-                    let op = ch
-                    advance ()
-                    let right = parseFactor ()
-                    node <- BinaryOp(op, node, right) :> Node
-                else
-                    continueLoop <- false
+                continueLoop <- false
 
         node
 
     and parseFactor () =
         skipWhitespace ()
 
-        if pos >= chars.Length then
-            Number(0L) :> Node
-        else
-            match currentChar with
-            | ch when Char.IsDigit(ch) -> parseNumber ()
-            | ch when Char.IsLetter(ch) -> parseVariable ()
-            | '(' ->
-                advance ()
-                let node = parseExpression ()
-                skipWhitespace ()
-
-                if pos < chars.Length && currentChar = ')' then
-                    advance ()
-
-                node
-            | _ -> Number(0L) :> Node
-
-    member _.Parse() =
-        while pos < chars.Length do
+        if isDigit currentChar then
+            parseNumber ()
+        elif isLetter currentChar then
+            parseVariable ()
+        elif currentChar = CharCodes.CHAR_LPAREN then
+            advance ()
+            let node = parseExpression ()
             skipWhitespace ()
 
-            if pos >= chars.Length then
+            if currentChar = CharCodes.CHAR_RPAREN then
+                advance ()
+
+            node
+        else
+            advance ()
+            Number(0L) :> Node
+
+    member _.Parse() =
+        while currentChar <> CharCodes.CHAR_EOF do
+            skipWhitespace ()
+
+            if currentChar = CharCodes.CHAR_EOF then
                 ()
             else
                 let expr = parseExpression ()
                 expressions.Add(expr)
 
                 skipWhitespace ()
+
+                while currentChar = CharCodes.CHAR_NEWLINE do
+                    advance ()
+                    skipWhitespace ()
 
         List.ofSeq expressions
 

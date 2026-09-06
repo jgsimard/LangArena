@@ -56,15 +56,47 @@ class CalculatorAst extends Benchmark:
     text = generateRandomProgram(n)
   }
 
+  private object CharCodes {
+    val CHAR_EOF = '\u0000'
+    val CHAR_PLUS = '+'
+    val CHAR_MINUS = '-'
+    val CHAR_STAR = '*'
+    val CHAR_SLASH = '/'
+    val CHAR_PERCENT = '%'
+    val CHAR_LPAREN = '('
+    val CHAR_RPAREN = ')'
+    val CHAR_EQUALS = '='
+    val CHAR_ZERO = '0'
+    val CHAR_NINE = '9'
+    val CHAR_A_LOWER = 'a'
+    val CHAR_Z_LOWER = 'z'
+    val CHAR_A_UPPER = 'A'
+    val CHAR_Z_UPPER = 'Z'
+    val CHAR_SPACE = ' '
+    val CHAR_TAB = '\t'
+    val CHAR_NEWLINE = '\n'
+    val CHAR_CR = '\r'
+  }
+
   private class Parser(val input: String) {
+    import CharCodes._
+
     private var pos = 0
-    private val chars = input.toCharArray
-    private val length = chars.length
+    private var currentChar = if (input.nonEmpty) input.charAt(0) else CHAR_EOF
     val expressions = ArrayBuffer.empty[Node]
 
     def parse(): List[Node] = {
-      while (pos < length) {
+      while (currentChar != CHAR_EOF) {
+        skipWhitespace()
+        if (currentChar == CHAR_EOF) return expressions.toList
+
         expressions.append(parseExpression())
+
+        skipWhitespace()
+        while (currentChar == CHAR_NEWLINE) {
+          advance()
+          skipWhitespace()
+        }
       }
       expressions.toList
     }
@@ -72,13 +104,11 @@ class CalculatorAst extends Benchmark:
     private def parseExpression(): Node = {
       var node = parseTerm()
 
-      while (pos < length) {
+      while (true) {
         skipWhitespace()
-        if (pos >= length) return node
 
-        val ch = currentChar()
-        if (ch == '+' || ch == '-') {
-          val op = ch
+        if (currentChar == CHAR_PLUS || currentChar == CHAR_MINUS) {
+          val op = currentChar
           advance()
           val right = parseTerm()
           node = BinaryOp(op, node, right)
@@ -92,13 +122,11 @@ class CalculatorAst extends Benchmark:
     private def parseTerm(): Node = {
       var node = parseFactor()
 
-      while (pos < length) {
+      while (true) {
         skipWhitespace()
-        if (pos >= length) return node
 
-        val ch = currentChar()
-        if (ch == '*' || ch == '/' || ch == '%') {
-          val op = ch
+        if (currentChar == CHAR_STAR || currentChar == CHAR_SLASH || currentChar == CHAR_PERCENT) {
+          val op = currentChar
           advance()
           val right = parseFactor()
           node = BinaryOp(op, node, right)
@@ -111,28 +139,27 @@ class CalculatorAst extends Benchmark:
 
     private def parseFactor(): Node = {
       skipWhitespace()
-      if (pos >= length) return Number(0)
 
-      val ch = currentChar()
-      if (ch >= '0' && ch <= '9') {
+      if (isDigit(currentChar)) {
         parseNumber()
-      } else if (ch >= 'a' && ch <= 'z') {
+      } else if (isLetter(currentChar)) {
         parseVariable()
-      } else if (ch == '(') {
+      } else if (currentChar == CHAR_LPAREN) {
         advance()
         val node = parseExpression()
         skipWhitespace()
-        if (currentChar() == ')') advance()
+        if (currentChar == CHAR_RPAREN) advance()
         node
       } else {
+        advance()
         Number(0)
       }
     }
 
     private def parseNumber(): Node = {
       var value = 0L
-      while (pos < length && chars(pos).isDigit) {
-        value = value * 10 + (chars(pos) - '0')
+      while (isDigit(currentChar)) {
+        value = value * 10 + (currentChar - CHAR_ZERO)
         advance()
       }
       Number(value)
@@ -140,13 +167,13 @@ class CalculatorAst extends Benchmark:
 
     private def parseVariable(): Node = {
       val start = pos
-      while (pos < length && chars(pos).isLetterOrDigit) {
+      while (isLetter(currentChar) || isDigit(currentChar)) {
         advance()
       }
       val varName = input.substring(start, pos)
 
       skipWhitespace()
-      if (pos < length && currentChar() == '=') {
+      if (currentChar == CHAR_EQUALS) {
         advance()
         val expr = parseExpression()
         Assignment(varName, expr)
@@ -155,18 +182,32 @@ class CalculatorAst extends Benchmark:
       }
     }
 
-    private def currentChar(): Char = {
-      if (pos < length) chars(pos) else '\u0000'
-    }
-
     private def advance(): Unit = {
-      if (pos < length) pos += 1
+      pos += 1
+      if (pos >= input.length) {
+        currentChar = CHAR_EOF
+      } else {
+        currentChar = input.charAt(pos)
+      }
     }
 
     private def skipWhitespace(): Unit = {
-      while (pos < length && chars(pos).isWhitespace) {
+      while (isWhitespace(currentChar)) {
         advance()
       }
+    }
+
+    private def isDigit(char: Char): Boolean = {
+      char >= CHAR_ZERO && char <= CHAR_NINE
+    }
+
+    private def isLetter(char: Char): Boolean = {
+      (char >= CHAR_A_LOWER && char <= CHAR_Z_LOWER) ||
+      (char >= CHAR_A_UPPER && char <= CHAR_Z_UPPER)
+    }
+
+    private def isWhitespace(char: Char): Boolean = {
+      char == CHAR_SPACE || char == CHAR_TAB || char == CHAR_NEWLINE || char == CHAR_CR
     }
   }
 
@@ -238,7 +279,6 @@ class CalculatorInterpreter extends Benchmark:
           val value = evaluate(assign.expr)
           variables(assign.variable) = value
           value
-        case _ => 0L
       }
     }
 

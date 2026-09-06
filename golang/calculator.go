@@ -6,6 +6,28 @@ import (
 	"strings"
 )
 
+const (
+	CHAR_EOF     byte = 0
+	CHAR_PLUS    byte = '+'
+	CHAR_MINUS   byte = '-'
+	CHAR_STAR    byte = '*'
+	CHAR_SLASH   byte = '/'
+	CHAR_PERCENT byte = '%'
+	CHAR_LPAREN  byte = '('
+	CHAR_RPAREN  byte = ')'
+	CHAR_EQUALS  byte = '='
+	CHAR_ZERO    byte = '0'
+	CHAR_NINE    byte = '9'
+	CHAR_A_LOWER byte = 'a'
+	CHAR_Z_LOWER byte = 'z'
+	CHAR_A_UPPER byte = 'A'
+	CHAR_Z_UPPER byte = 'Z'
+	CHAR_SPACE   byte = ' '
+	CHAR_TAB     byte = '\t'
+	CHAR_NEWLINE byte = '\n'
+	CHAR_CR      byte = '\r'
+)
+
 type AstNode interface{}
 type NumberNode struct{ value int64 }
 type VariableNode struct{ name string }
@@ -33,15 +55,17 @@ func NewParser(input string) *Parser {
 	}
 	if p.len > 0 {
 		p.current = input[0]
+	} else {
+		p.current = CHAR_EOF
 	}
 	return p
 }
 
 func (p *Parser) parse() []AstNode {
 	nodes := make([]AstNode, 0)
-	for p.pos < p.len {
+	for p.current != CHAR_EOF {
 		p.skipWhitespace()
-		if p.pos >= p.len {
+		if p.current == CHAR_EOF {
 			break
 		}
 		node := p.parseExpression()
@@ -50,7 +74,7 @@ func (p *Parser) parse() []AstNode {
 		}
 
 		p.skipWhitespace()
-		for p.pos < p.len && (p.current == '\n' || p.current == ';') {
+		for p.current == CHAR_NEWLINE {
 			p.advance()
 			p.skipWhitespace()
 		}
@@ -61,13 +85,10 @@ func (p *Parser) parse() []AstNode {
 func (p *Parser) parseExpression() AstNode {
 	node := p.parseTerm()
 
-	for p.pos < p.len {
+	for {
 		p.skipWhitespace()
-		if p.pos >= p.len {
-			break
-		}
 
-		if p.current == '+' || p.current == '-' {
+		if p.current == CHAR_PLUS || p.current == CHAR_MINUS {
 			op := p.current
 			p.advance()
 			right := p.parseTerm()
@@ -83,13 +104,10 @@ func (p *Parser) parseExpression() AstNode {
 func (p *Parser) parseTerm() AstNode {
 	node := p.parseFactor()
 
-	for p.pos < p.len {
+	for {
 		p.skipWhitespace()
-		if p.pos >= p.len {
-			break
-		}
 
-		if p.current == '*' || p.current == '/' || p.current == '%' {
+		if p.current == CHAR_STAR || p.current == CHAR_SLASH || p.current == CHAR_PERCENT {
 			op := p.current
 			p.advance()
 			right := p.parseFactor()
@@ -104,31 +122,28 @@ func (p *Parser) parseTerm() AstNode {
 
 func (p *Parser) parseFactor() AstNode {
 	p.skipWhitespace()
-	if p.pos >= p.len {
-		return NumberNode{value: 0}
-	}
 
-	switch {
-	case p.current >= '0' && p.current <= '9':
+	if p.isDigit(p.current) {
 		return p.parseNumber()
-	case (p.current >= 'a' && p.current <= 'z') || (p.current >= 'A' && p.current <= 'Z'):
+	} else if p.isLetter(p.current) {
 		return p.parseVariable()
-	case p.current == '(':
+	} else if p.current == CHAR_LPAREN {
 		p.advance()
 		node := p.parseExpression()
 		p.skipWhitespace()
-		if p.current == ')' {
+		if p.current == CHAR_RPAREN {
 			p.advance()
 		}
 		return node
-	default:
+	} else {
+		p.advance()
 		return NumberNode{value: 0}
 	}
 }
 
 func (p *Parser) parseNumber() AstNode {
 	start := p.pos
-	for p.pos < p.len && p.current >= '0' && p.current <= '9' {
+	for p.isDigit(p.current) {
 		p.advance()
 	}
 	val, _ := strconv.ParseInt(p.input[start:p.pos], 10, 64)
@@ -137,15 +152,13 @@ func (p *Parser) parseNumber() AstNode {
 
 func (p *Parser) parseVariable() AstNode {
 	start := p.pos
-	for p.pos < p.len && ((p.current >= 'a' && p.current <= 'z') ||
-		(p.current >= 'A' && p.current <= 'Z') ||
-		(p.current >= '0' && p.current <= '9')) {
+	for p.isLetter(p.current) || p.isDigit(p.current) {
 		p.advance()
 	}
 	varName := p.input[start:p.pos]
 
 	p.skipWhitespace()
-	if p.current == '=' {
+	if p.current == CHAR_EQUALS {
 		p.advance()
 		expr := p.parseExpression()
 		return AssignmentNode{varName: varName, expr: expr}
@@ -157,17 +170,29 @@ func (p *Parser) parseVariable() AstNode {
 func (p *Parser) advance() {
 	p.pos++
 	if p.pos >= p.len {
-		p.current = 0
+		p.current = CHAR_EOF
 	} else {
 		p.current = p.input[p.pos]
 	}
 }
 
 func (p *Parser) skipWhitespace() {
-	for p.pos < p.len && (p.current == ' ' || p.current == '\t' ||
-		p.current == '\n' || p.current == '\r') {
+	for p.isWhitespace(p.current) {
 		p.advance()
 	}
+}
+
+func (p *Parser) isDigit(byte byte) bool {
+	return byte >= CHAR_ZERO && byte <= CHAR_NINE
+}
+
+func (p *Parser) isLetter(byte byte) bool {
+	return (byte >= CHAR_A_LOWER && byte <= CHAR_Z_LOWER) ||
+		(byte >= CHAR_A_UPPER && byte <= CHAR_Z_UPPER)
+}
+
+func (p *Parser) isWhitespace(byte byte) bool {
+	return byte == CHAR_SPACE || byte == CHAR_TAB || byte == CHAR_NEWLINE || byte == CHAR_CR
 }
 
 type CalculatorAst struct {
