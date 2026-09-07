@@ -882,9 +882,10 @@ class LZWDecode extends Benchmark {
 
       val newStr = if (newCode < dict.size) {
         dict.get(newCode)
-      } else {
-
+      } else if (nextCode == newCode) {
         oldStr + oldStr.charAt(0).toString
+      } else {
+        return new Array[Byte](0)
       }
 
       result.write(newStr.getBytes("ISO-8859-1"))

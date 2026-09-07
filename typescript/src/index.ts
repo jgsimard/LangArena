@@ -4801,7 +4801,7 @@ export class LZWDecode extends Benchmark {
         newStr.set(oldStr);
         newStr[oldStr.length] = firstChar;
       } else {
-        throw new Error(`Error decode: invalid code ${newCode}`);
+        return new Uint8Array();
       }
 
       resultChunks.push(newStr);

@@ -827,6 +827,7 @@ class LZWDecode : Benchmark() {
 
         var oldStr = dict[oldCode]
         result.write(oldStr.toByteArray(Charsets.ISO_8859_1))
+        var nextCode = 256
 
         while (pos < data.size) {
             val high = data[pos].toInt() and 0xFF
@@ -837,13 +838,16 @@ class LZWDecode : Benchmark() {
             val newStr =
                 if (newCode < dict.size) {
                     dict[newCode]
-                } else {
+                } else if (newCode == nextCode) {
                     oldStr + oldStr.substring(0, 1)
+                } else {
+                    return byteArrayOf()
                 }
 
             result.write(newStr.toByteArray(Charsets.ISO_8859_1))
 
             dict.add(oldStr + newStr.substring(0, 1))
+            nextCode++
             oldStr = newStr
         }
 

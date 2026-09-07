@@ -639,7 +639,7 @@ LZWDecode::lzw_decode(const LZWEncode::LZWResult &encoded) {
     } else if (new_code == next_code) {
       new_str = dict[old_code] + dict[old_code][0];
     } else {
-      throw std::runtime_error("Error decode");
+      return {};
     }
 
     result.insert(result.end(), new_str.begin(), new_str.end());

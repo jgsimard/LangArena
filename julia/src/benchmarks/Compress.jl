@@ -872,7 +872,7 @@ function lzw_decode(encoded::LZWResult)::Vector{UInt8}
 
             new_str = old_str * old_str[begin:begin]
         else
-            error("LZW decode error")
+            return UInt8[]
         end
 
         append!(result, codeunits(new_str))

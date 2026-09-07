@@ -1023,7 +1023,7 @@ private:
             }
             else
             {
-                throw new Exception("Error decode");
+                return [];
             }
 
             result.put(cast(ubyte[]) newStr);

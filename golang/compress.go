@@ -925,7 +925,7 @@ func (l *LZWDecode) lzwDecode(encoded LZWResult) []byte {
 
 			newStr = oldStr + string(oldStr[0])
 		} else {
-			panic("LZW decode error")
+			return []byte{}
 		}
 
 		result = append(result, newStr...)

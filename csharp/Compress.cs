@@ -974,7 +974,7 @@ public class LZWDecode : CompressBenchmark
             }
             else
             {
-                throw new Exception("Error decode");
+                return new byte[0];
             }
 
             byte[] newBytes = Encoding.UTF8.GetBytes(newStr);

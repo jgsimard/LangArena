@@ -1007,7 +1007,7 @@ fn lzw_decode(encoded: &LZWResult) -> Vec<u8> {
         } else if new_code == next_code {
             old_str.clone() + &old_str[0..1]
         } else {
-            panic!("Decode error");
+            return Vec::new();
         };
 
         result.extend_from_slice(new_str.as_bytes());

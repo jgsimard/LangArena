@@ -810,7 +810,6 @@ type LZWDecode() =
             let dict = System.Collections.Generic.List<string>()
 
             for i = 0 to 255 do
-
                 dict.Add(string (char i))
 
             let result = System.Collections.Generic.List<byte>()
@@ -828,34 +827,36 @@ type LZWDecode() =
                 result.Add(byte c)
 
             let mutable nextCode = 256
+            let mutable success = true
 
-            while pos < data.Length do
+            while pos < data.Length && success do
                 let high = int data.[pos]
                 let low = int data.[pos + 1]
                 let newCode = (high <<< 8) ||| low
                 pos <- pos + 2
 
-                let newStr =
-                    if newCode < dict.Count then
-                        dict.[newCode]
-                    elif newCode = nextCode then
+                if newCode < dict.Count then
+                    let newStr = dict.[newCode]
 
-                        oldStr + string (oldStr.[0])
-                    else
-                        failwithf
-                            "LZW decode error: invalid code %d (nextCode=%d, dict.Count=%d)"
-                            newCode
-                            nextCode
-                            dict.Count
+                    for c in newStr do
+                        result.Add(byte c)
 
-                for c in newStr do
-                    result.Add(byte c)
+                    dict.Add(oldStr + string (newStr.[0]))
+                    nextCode <- nextCode + 1
+                    oldStr <- newStr
+                elif newCode = nextCode then
+                    let newStr = oldStr + string (oldStr.[0])
 
-                dict.Add(oldStr + string (newStr.[0]))
-                nextCode <- nextCode + 1
-                oldStr <- newStr
+                    for c in newStr do
+                        result.Add(byte c)
 
-            result.ToArray()
+                    dict.Add(newStr)
+                    nextCode <- nextCode + 1
+                    oldStr <- newStr
+                else
+                    success <- false
+
+            if success then result.ToArray() else [||]
 
     override this.Name = "Compress::LZWDecode"
 

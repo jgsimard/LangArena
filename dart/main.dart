@@ -4450,7 +4450,7 @@ class LZWDecode extends Benchmark {
       } else if (newCode == nextCode) {
         newStr = oldStr + oldStr[0];
       } else {
-        throw Exception("Error decode");
+        return Uint8List(0);
       }
 
       result.add(newStr.codeUnits);

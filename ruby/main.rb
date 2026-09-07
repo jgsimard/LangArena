@@ -4030,7 +4030,7 @@ module Compress
         elsif new_code == next_code
           new_str = old_str + old_str[0]
         else
-          raise "Error decode"
+          return []
         end
 
         result.concat(new_str.bytes)

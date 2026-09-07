@@ -3901,7 +3901,7 @@ module Compress
   end
 
   class LZWDecode < Benchmark
-    def lzw_decode(encoded : LZWEncode::LZWResult) : Bytes
+    def lzw_decode(encoded : LZWEncode::LZWResult) : Bytes?
       return Bytes.new(0) if encoded.data.empty?
 
       dict = Array(String).new(4096)
@@ -3935,7 +3935,7 @@ module Compress
         elsif new_code == next_code
           new_str = old_str + old_str[0]
         else
-          raise "Error decode"
+          return Bytes.new(0)
         end
 
         result.write(new_str.to_slice)

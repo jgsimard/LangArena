@@ -767,8 +767,10 @@ proc lzwDecode*(encoded: LZWResult): seq[byte] =
 
     let currentStr = if newCode < nextCode:
       dict[newCode]
-    else:
+    elif nextCode == newCode:
       oldStr & oldStr[0]
+    else:
+      return @[]
 
     for c in currentStr:
       resultData.add(byte(c))

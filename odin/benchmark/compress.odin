@@ -1130,7 +1130,7 @@ lzw_decode :: proc(encoded: LZWResult) -> []u8 {
 			bytes[len(old_str)] = old_str[0]
 			current_str = bytes
 		} else {
-			panic("Invalid code")
+			return make([]u8, 0)
 		}
 
 		append(&result, ..current_str)

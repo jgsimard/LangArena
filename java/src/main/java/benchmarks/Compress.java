@@ -885,7 +885,7 @@ class LZWDecode extends Benchmark {
         return "Compress::LZWDecode";
     }
 
-    private byte[] lzwDecode(LZWEncode.LZWResult encoded) {
+    private byte[] lzwDecode(LZWEncode.LZWResult encoded) throws IOException {
         if (encoded.data.length == 0) {
             return new byte[0];
         }
@@ -905,11 +905,7 @@ class LZWDecode extends Benchmark {
         pos += 2;
 
         String oldStr = dict.get(oldCode);
-        try {
-            result.write(oldStr.getBytes(StandardCharsets.ISO_8859_1));
-        } catch (IOException e) {
-            throw new RuntimeException("Unexpected IOException", e);
-        }
+        result.write(oldStr.getBytes(StandardCharsets.ISO_8859_1));
 
         int nextCode = 256;
 
@@ -926,14 +922,10 @@ class LZWDecode extends Benchmark {
             } else if (newCode == nextCode) {
                 newStr = oldStr + oldStr.substring(0, 1);
             } else {
-                throw new RuntimeException("Error decode");
+                return new byte[0];
             }
 
-            try {
-                result.write(newStr.getBytes(StandardCharsets.ISO_8859_1));
-            } catch (IOException e) {
-                throw new RuntimeException("Unexpected IOException", e);
-            }
+            result.write(newStr.getBytes(StandardCharsets.ISO_8859_1));
 
             dict.add(oldStr + newStr.substring(0, 1));
             nextCode++;
@@ -957,8 +949,12 @@ class LZWDecode extends Benchmark {
 
     @Override
     public void run(int iterationId) {
-        decoded = lzwDecode(encoded);
-        resultVal += decoded.length;
+        try {
+            decoded = lzwDecode(encoded);
+            resultVal += decoded.length;
+        } catch (IOException e) {
+            throw new RuntimeException("Unexpected IOException", e);
+        }
     }
 
     @Override

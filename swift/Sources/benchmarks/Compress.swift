@@ -935,10 +935,11 @@ class LZWDecode: BenchmarkProtocol {
       let newStr: String
       if newCode < dict.count {
         newStr = dict[newCode]
-      } else {
-
+      } else if newCode == nextCode {
         let firstChar = String(oldStr[oldStr.startIndex])
         newStr = oldStr + firstChar
+      } else {
+        return []
       }
 
       result.append(contentsOf: newStr.utf8)

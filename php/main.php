@@ -4633,7 +4633,7 @@ class CompressLZWDecode extends Benchmark
             } elseif ($newCode === $nextCode) {
                 $newStr = $oldStr . $oldStr[0];
             } else {
-                break;
+                return;
             }
 
             $result .= $newStr;

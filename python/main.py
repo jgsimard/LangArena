@@ -3902,7 +3902,7 @@ class LZWDecode(Benchmark):
             elif new_code == next_code:
                 new_str = dictionary[old_code] + dictionary[old_code][:1]
             else:
-                raise ValueError(f"Error decode: code {new_code} not found")
+                return b''
 
             result.extend(new_str)
 

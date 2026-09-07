@@ -1013,7 +1013,7 @@ fn lzw_decode(encoded LZWResult) []u8 {
 			s[0] = first_char
 			new_str = old_str + unsafe { s.bytestr() }
 		} else {
-			panic('LZW decode error: invalid code')
+			return []u8{}
 		}
 
 		result << new_str.bytes()
