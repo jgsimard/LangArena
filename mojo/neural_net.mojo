@@ -148,9 +148,7 @@ struct _NN(Movable):
         var temp_threshold = neuron.threshold
         neuron.threshold += (
             NN_TRAIN_RATE * NN_LEARNING_RATE * neuron.error * (-1.0)
-        ) + NN_MOMENTUM * (
-            neuron.threshold - neuron.prev_threshold
-        )
+        ) + NN_MOMENTUM * (neuron.threshold - neuron.prev_threshold)
         neuron.prev_threshold = temp_threshold
 
 
