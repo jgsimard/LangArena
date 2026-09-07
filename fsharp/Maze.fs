@@ -310,13 +310,11 @@ type MazeAStar() =
             let targetIdx = this.Idx(target.Y, target.X)
 
             let openSet = PriorityQueue<int, int>()
-            let inOpen = Array.create size false
 
             let fStart = this.Heuristic(start, target)
             openSet.Enqueue(startIdx, fStart)
             bestF.[startIdx] <- fStart
             gScore.[startIdx] <- 0
-            inOpen.[startIdx] <- true
 
             let mutable result = []
 
@@ -324,7 +322,6 @@ type MazeAStar() =
                 let ok, currentIdx, _ = openSet.TryDequeue()
 
                 if ok then
-                    inOpen.[currentIdx] <- false
 
                     if currentIdx = targetIdx then
                         let mutable cur = currentIdx
@@ -364,7 +361,6 @@ type MazeAStar() =
                                         if fNew < bestF.[neighborIdx] then
                                             bestF.[neighborIdx] <- fNew
                                             openSet.Enqueue(neighborIdx, fNew)
-                                            inOpen.[neighborIdx] <- true
                         | None -> ()
 
             result

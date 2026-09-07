@@ -429,17 +429,14 @@ final class MazeAStar: BenchmarkProtocol {
     let targetIdx = idx(y: target.y, x: target.x)
 
     var openSet = PriorityQueue(capacity: size)
-    var inOpen = [Bool](repeating: false, count: size)
 
     gScore[startIdx] = 0
     let fStart = heuristic(a: start, b: target)
     openSet.push(vertex: startIdx, priority: fStart)
     bestF[startIdx] = fStart
-    inOpen[startIdx] = true
 
     while !openSet.isEmpty {
       guard let currentIdx = openSet.pop() else { break }
-      inOpen[currentIdx] = false
 
       if currentIdx == targetIdx {
         var result: [Cell] = []
@@ -474,7 +471,6 @@ final class MazeAStar: BenchmarkProtocol {
           if fNew < bestF[neighborIdx] {
             bestF[neighborIdx] = fNew
             openSet.push(vertex: neighborIdx, priority: fNew)
-            inOpen[neighborIdx] = true
           }
         }
       }

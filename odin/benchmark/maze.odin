@@ -461,19 +461,14 @@ maze_astar_search :: proc(maze: ^Maze, start, target: ^MazeCell) -> [dynamic]^Ma
 	priority_queue.init(&pq, maze_astar_item_less, maze_astar_item_swap)
 	defer priority_queue.destroy(&pq)
 
-	in_open := make([]bool, size)
-	defer delete(in_open)
-
 	g_score[start_idx] = 0
 	f_start := maze_astar_heuristic(start, target)
 	priority_queue.push(&pq, MazeAStarItem{priority = f_start, vertex = start_idx})
 	best_f[start_idx] = f_start
-	in_open[start_idx] = true
 
 	for priority_queue.len(pq) > 0 {
 		current := priority_queue.pop(&pq)
 		current_idx := current.vertex
-		in_open[current_idx] = false
 
 		if current_idx == target_idx {
 			cur := current_idx
@@ -510,7 +505,6 @@ maze_astar_search :: proc(maze: ^Maze, start, target: ^MazeCell) -> [dynamic]^Ma
 						&pq,
 						MazeAStarItem{priority = f_new, vertex = neighbor_idx},
 					)
-					in_open[neighbor_idx] = true
 				}
 			}
 		}

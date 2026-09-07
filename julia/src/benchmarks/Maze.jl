@@ -389,17 +389,14 @@ function astar(maze::Maze, start::Cell, target::Cell)::Vector{Cell}
     target_idx = target.y * width + target.x + 1
 
     open_set = BinaryMinHeap{Tuple{Int32,Int64}}()
-    in_open = falses(size)
 
     g_score[start_idx] = 0
     f_start = heuristic(start, target)
     push!(open_set, (f_start, start_idx))
     best_f[start_idx] = f_start
-    in_open[start_idx] = true
 
     while !isempty(open_set)
         f_val, current_idx = pop!(open_set)
-        in_open[current_idx] = false
 
         if f_val != best_f[current_idx]
             continue
@@ -437,13 +434,7 @@ function astar(maze::Maze, start::Cell, target::Cell)::Vector{Cell}
 
                 if f_new < best_f[neighbor_idx]
                     best_f[neighbor_idx] = f_new
-                    if in_open[neighbor_idx]
-
-                        push!(open_set, (f_new, neighbor_idx))
-                    else
-                        push!(open_set, (f_new, neighbor_idx))
-                        in_open[neighbor_idx] = true
-                    end
+                    push!(open_set, (f_new, neighbor_idx))
                 end
             end
         end

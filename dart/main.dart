@@ -3560,18 +3560,15 @@ class MazeAStar extends Benchmark {
     int targetIdx = idx(target.y, target.x);
 
     var openSet = PriorityQueue<_AStarItem>();
-    var inOpen = List<bool>.filled(size, false);
 
     gScore[startIdx] = 0;
     int fStart = heuristic(start, target);
     openSet.add(_AStarItem(fStart, startIdx));
     bestF[startIdx] = fStart;
-    inOpen[startIdx] = true;
 
     while (openSet.isNotEmpty) {
       var current = openSet.removeFirst();
       int currentIdx = current.vertex;
-      inOpen[currentIdx] = false;
 
       if (currentIdx == targetIdx) {
         var result = <MazeCell>[];
@@ -3604,7 +3601,6 @@ class MazeAStar extends Benchmark {
           if (fNew < bestF[neighborIdx]) {
             bestF[neighborIdx] = fNew;
             openSet.add(_AStarItem(fNew, neighborIdx));
-            inOpen[neighborIdx] = true;
           }
         }
       }

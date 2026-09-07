@@ -301,18 +301,15 @@ class MazeAStar extends Benchmark {
     val targetIdx = idx(target.y, target.x)
 
     val openSet = mutable.PriorityQueue.empty[Item](Ordering[Item].reverse)
-    val inOpen = new Array[Boolean](size)
 
     gScore(startIdx) = 0
     val fStart = heuristic(start, target)
     openSet.enqueue(Item(fStart, startIdx))
     bestF(startIdx) = fStart
-    inOpen(startIdx) = true
 
     while (openSet.nonEmpty) {
       val current = openSet.dequeue()
       val currentIdx = current.vertex
-      inOpen(currentIdx) = false
 
       if (currentIdx == targetIdx) {
         var cur = currentIdx
@@ -344,7 +341,6 @@ class MazeAStar extends Benchmark {
             if (fNew < bestF(neighborIdx)) {
               bestF(neighborIdx) = fNew
               openSet.enqueue(Item(fNew, neighborIdx))
-              inOpen(neighborIdx) = true
             }
           }
         }

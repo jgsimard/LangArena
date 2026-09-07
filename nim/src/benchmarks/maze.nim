@@ -327,18 +327,15 @@ proc astar(maze: Maze, start, target: Cell, width, height: int): seq[Cell] =
   let targetIdx = idx(target.y, target.x, width)
 
   var openSet = initHeapQueue[Item]()
-  var inOpen = newSeq[bool](size)
 
   gScore[startIdx] = 0
   let fStart = heuristic(start, target)
   openSet.push(Item(priority: fStart, vertex: startIdx))
   bestF[startIdx] = fStart
-  inOpen[startIdx] = true
 
   while openSet.len > 0:
     let current = openSet.pop()
     let currentIdx = current.vertex
-    inOpen[currentIdx] = false
 
     if currentIdx == targetIdx:
       var cur = currentIdx
@@ -370,7 +367,6 @@ proc astar(maze: Maze, start, target: Cell, width, height: int): seq[Cell] =
         if fNew < bestF[neighborIdx]:
           bestF[neighborIdx] = fNew
           openSet.push(Item(priority: fNew, vertex: neighborIdx))
-          inOpen[neighborIdx] = true
 
   @[]
 

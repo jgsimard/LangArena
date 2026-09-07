@@ -489,13 +489,11 @@ fn (mut b MazeAStar) astar(start &Cell, target &Cell) []&Cell {
 	target_idx := b.idx(target.y, target.x)
 
 	mut open_set := priority_queue_new(size)
-	mut in_open := []u8{len: size, init: 0}
 
 	g_score[start_idx] = 0
 	f_start := b.heuristic(start, target)
 	open_set.push(start_idx, f_start)
 	best_f[start_idx] = f_start
-	in_open[start_idx] = 1
 
 	for open_set.size > 0 {
 		current_idx := open_set.pop() or { break }
@@ -533,10 +531,7 @@ fn (mut b MazeAStar) astar(start &Cell, target &Cell) []&Cell {
 
 				if f_new < best_f[neighbor_idx] {
 					best_f[neighbor_idx] = f_new
-					if in_open[neighbor_idx] == 0 {
-						open_set.push(neighbor_idx, f_new)
-						in_open[neighbor_idx] = 1
-					}
+					open_set.push(neighbor_idx, f_new)
 				}
 			}
 		}

@@ -414,16 +414,11 @@ impl MazeAStar {
 
         let mut open_set = BinaryHeap::new();
 
-        let mut in_open = vec![false; size];
-
         g_score[start_idx] = 0;
         f_score[start_idx] = self.heuristic(start, target);
         open_set.push(Reverse((f_score[start_idx], start_idx)));
-        in_open[start_idx] = true;
 
         while let Some(Reverse((_, current_idx))) = open_set.pop() {
-            in_open[current_idx] = false;
-
             if g_score[current_idx] == i32::MAX {
                 continue;
             }
@@ -458,12 +453,7 @@ impl MazeAStar {
                     g_score[neighbor_idx] = tentative_g;
                     f_score[neighbor_idx] = tentative_g + self.heuristic((ny, nx), target);
 
-                    if !in_open[neighbor_idx] {
-                        open_set.push(Reverse((f_score[neighbor_idx], neighbor_idx)));
-                        in_open[neighbor_idx] = true;
-                    } else {
-                        open_set.push(Reverse((f_score[neighbor_idx], neighbor_idx)));
-                    }
+                    open_set.push(Reverse((f_score[neighbor_idx], neighbor_idx)));
                 }
             }
         }

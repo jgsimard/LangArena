@@ -3092,18 +3092,15 @@ class MazeAStar(Benchmark):
         target_idx = self._idx(target.y, target.x, self.width)
 
         open_set = []
-        in_open = [False] * size
 
         g_score[start_idx] = 0
         f_start = self._heuristic(start, target)
         heapq.heappush(open_set, MazeAStar.Item(f_start, start_idx))
         best_f[start_idx] = f_start
-        in_open[start_idx] = True
 
         while open_set:
             current = heapq.heappop(open_set)
             current_idx = current.vertex
-            in_open[current_idx] = False
 
             if current_idx == target_idx:
                 result = []
@@ -3136,7 +3133,6 @@ class MazeAStar(Benchmark):
                         best_f[neighbor_idx] = f_new
                         heapq.heappush(open_set,
                                        MazeAStar.Item(f_new, neighbor_idx))
-                        in_open[neighbor_idx] = True
 
         return []
 

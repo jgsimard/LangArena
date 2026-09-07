@@ -604,19 +604,13 @@ pub const MazeAStar = struct {
         var open_set = try PriorityQueue.init(self.allocator, size);
         defer open_set.deinit();
 
-        var in_open = try self.allocator.alloc(u8, size);
-        defer self.allocator.free(in_open);
-        @memset(in_open, 0);
-
         g_score[start_idx] = 0;
         const f_start = heuristic(start, target);
         try open_set.push(@intCast(start_idx), f_start);
         best_f[start_idx] = f_start;
-        in_open[start_idx] = 1;
 
         while (open_set.size > 0) {
             const current_idx = open_set.pop() orelse break;
-            in_open[@intCast(current_idx)] = 0;
 
             if (current_idx == target_idx) {
                 var result = std.ArrayListUnmanaged(*MazeGenerator.Cell).empty;
@@ -647,10 +641,7 @@ pub const MazeAStar = struct {
 
                     if (f_new < best_f[neighbor_idx]) {
                         best_f[neighbor_idx] = f_new;
-                        if (in_open[neighbor_idx] == 0) {
-                            try open_set.push(@intCast(neighbor_idx), f_new);
-                            in_open[neighbor_idx] = 1;
-                        }
+                        try open_set.push(@intCast(neighbor_idx), f_new);
                     }
                 }
             }
