@@ -4647,10 +4647,11 @@ class NGram extends Benchmark {
     var grams1 = <int, int>{};
 
     for (int i = 0; i <= bytes1.length - N; i++) {
-      int gram = (bytes1[i] << 24) |
-          (bytes1[i + 1] << 16) |
-          (bytes1[i + 2] << 8) |
-          bytes1[i + 3];
+      int gram = ((bytes1[i] << 24) |
+              (bytes1[i + 1] << 16) |
+              (bytes1[i + 2] << 8) |
+              bytes1[i + 3]) &
+          0xFFFFFFFF;
 
       grams1[gram] = (grams1[gram] ?? 0) + 1;
     }
@@ -4659,10 +4660,11 @@ class NGram extends Benchmark {
     int intersection = 0;
 
     for (int i = 0; i <= bytes2.length - N; i++) {
-      int gram = (bytes2[i] << 24) |
-          (bytes2[i + 1] << 16) |
-          (bytes2[i + 2] << 8) |
-          bytes2[i + 3];
+      int gram = ((bytes2[i] << 24) |
+              (bytes2[i + 1] << 16) |
+              (bytes2[i + 2] << 8) |
+              bytes2[i + 3]) &
+          0xFFFFFFFF;
 
       grams2[gram] = (grams2[gram] ?? 0) + 1;
 

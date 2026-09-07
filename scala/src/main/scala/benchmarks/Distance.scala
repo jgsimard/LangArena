@@ -120,25 +120,25 @@ object Distance:
 
       if bytes1.length < N || bytes2.length < N then return 0.0
 
-      val grams1 = new java.util.HashMap[Int, Int](bytes1.length)
+      val grams1 = new java.util.HashMap[Long, Int](bytes1.length)
 
       for (i <- 0 to bytes1.length - N) {
-        val gram = (bytes1(i) & 0xff) << 24 |
-          (bytes1(i + 1) & 0xff) << 16 |
-          (bytes1(i + 2) & 0xff) << 8 |
-          (bytes1(i + 3) & 0xff)
+        val gram = (bytes1(i) & 0xffL) << 24 |
+          (bytes1(i + 1) & 0xffL) << 16 |
+          (bytes1(i + 2) & 0xffL) << 8 |
+          (bytes1(i + 3) & 0xffL)
 
         grams1.merge(gram, 1, (a, b) => a + b)
       }
 
-      val grams2 = new java.util.HashMap[Int, Int](bytes2.length)
+      val grams2 = new java.util.HashMap[Long, Int](bytes2.length)
       var intersection = 0
 
       for (i <- 0 to bytes2.length - N) {
-        val gram = (bytes2(i) & 0xff) << 24 |
-          (bytes2(i + 1) & 0xff) << 16 |
-          (bytes2(i + 2) & 0xff) << 8 |
-          (bytes2(i + 3) & 0xff)
+        val gram = (bytes2(i) & 0xffL) << 24 |
+          (bytes2(i + 1) & 0xffL) << 16 |
+          (bytes2(i + 2) & 0xffL) << 8 |
+          (bytes2(i + 3) & 0xffL)
 
         grams2.merge(gram, 1, (a, b) => a + b)
 

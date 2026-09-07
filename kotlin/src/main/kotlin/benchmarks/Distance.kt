@@ -137,27 +137,27 @@ object Distance {
 
             if (bytes1.size < N || bytes2.size < N) return 0.0
 
-            val grams1 = HashMap<Int, Int>(bytes1.size)
+            val grams1 = HashMap<Long, Int>(bytes1.size)
 
             for (i in 0..bytes1.size - N) {
                 val gram =
-                    ((bytes1[i].toInt() and 0xFF) shl 24) or
-                        ((bytes1[i + 1].toInt() and 0xFF) shl 16) or
-                        ((bytes1[i + 2].toInt() and 0xFF) shl 8) or
-                        (bytes1[i + 3].toInt() and 0xFF)
+                    ((bytes1[i].toLong() and 0xFF) shl 24) or
+                        ((bytes1[i + 1].toLong() and 0xFF) shl 16) or
+                        ((bytes1[i + 2].toLong() and 0xFF) shl 8) or
+                        (bytes1[i + 3].toLong() and 0xFF)
 
                 grams1.merge(gram, 1) { old, _ -> old + 1 }
             }
 
-            val grams2 = HashMap<Int, Int>(bytes2.size)
+            val grams2 = HashMap<Long, Int>(bytes2.size)
             var intersection = 0
 
             for (i in 0..bytes2.size - N) {
                 val gram =
-                    ((bytes2[i].toInt() and 0xFF) shl 24) or
-                        ((bytes2[i + 1].toInt() and 0xFF) shl 16) or
-                        ((bytes2[i + 2].toInt() and 0xFF) shl 8) or
-                        (bytes2[i + 3].toInt() and 0xFF)
+                    ((bytes2[i].toLong() and 0xFF) shl 24) or
+                        ((bytes2[i + 1].toLong() and 0xFF) shl 16) or
+                        ((bytes2[i + 2].toLong() and 0xFF) shl 8) or
+                        (bytes2[i + 3].toLong() and 0xFF)
 
                 val count2 = (grams2[gram] ?: 0) + 1
                 grams2[gram] = count2

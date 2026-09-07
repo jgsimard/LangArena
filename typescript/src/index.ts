@@ -4987,10 +4987,11 @@ class NGram extends Benchmark {
 
     for (let i = 0; i <= s1.length - this.n; i++) {
       const gram =
-        (s1.charCodeAt(i) << 24) |
-        (s1.charCodeAt(i + 1) << 16) |
-        (s1.charCodeAt(i + 2) << 8) |
-        s1.charCodeAt(i + 3);
+        ((s1.charCodeAt(i) << 24) |
+          (s1.charCodeAt(i + 1) << 16) |
+          (s1.charCodeAt(i + 2) << 8) |
+          s1.charCodeAt(i + 3)) >>>
+        0;
 
       const val = grams1.get(gram) || 0;
       grams1.set(gram, val + 1);
@@ -5001,10 +5002,11 @@ class NGram extends Benchmark {
 
     for (let i = 0; i <= s2.length - this.n; i++) {
       const gram =
-        (s2.charCodeAt(i) << 24) |
-        (s2.charCodeAt(i + 1) << 16) |
-        (s2.charCodeAt(i + 2) << 8) |
-        s2.charCodeAt(i + 3);
+        ((s2.charCodeAt(i) << 24) |
+          (s2.charCodeAt(i + 1) << 16) |
+          (s2.charCodeAt(i + 2) << 8) |
+          s2.charCodeAt(i + 3)) >>>
+        0;
 
       const val2 = grams2.get(gram) || 0;
       grams2.set(gram, val2 + 1);

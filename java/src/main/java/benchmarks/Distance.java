@@ -158,25 +158,25 @@ public class Distance {
             byte[] bytes1 = s1.getBytes(StandardCharsets.US_ASCII);
             byte[] bytes2 = s2.getBytes(StandardCharsets.US_ASCII);
 
-            Map<Integer, Integer> grams1 = new HashMap<>(bytes1.length);
+            Map<Long, Integer> grams1 = new HashMap<>(bytes1.length);
 
             for (int i = 0; i <= bytes1.length - N; i++) {
-                int gram = ((int) bytes1[i] & 0xFF) << 24 |
-                           ((int) bytes1[i + 1] & 0xFF) << 16 |
-                           ((int) bytes1[i + 2] & 0xFF) << 8 |
-                           ((int) bytes1[i + 3] & 0xFF);
+                long gram = ((long) bytes1[i] & 0xFF) << 24 |
+                            ((long) bytes1[i + 1] & 0xFF) << 16 |
+                            ((long) bytes1[i + 2] & 0xFF) << 8 |
+                            ((long) bytes1[i + 3] & 0xFF);
 
                 grams1.merge(gram, 1, Integer::sum);
             }
 
-            Map<Integer, Integer> grams2 = new HashMap<>(bytes2.length);
+            Map<Long, Integer> grams2 = new HashMap<>(bytes2.length);
             int intersection = 0;
 
             for (int i = 0; i <= bytes2.length - N; i++) {
-                int gram = ((int) bytes2[i] & 0xFF) << 24 |
-                           ((int) bytes2[i + 1] & 0xFF) << 16 |
-                           ((int) bytes2[i + 2] & 0xFF) << 8 |
-                           ((int) bytes2[i + 3] & 0xFF);
+                long gram = ((long) bytes2[i] & 0xFF) << 24 |
+                            ((long) bytes2[i + 1] & 0xFF) << 16 |
+                            ((long) bytes2[i + 2] & 0xFF) << 8 |
+                            ((long) bytes2[i + 3] & 0xFF);
 
                 grams2.merge(gram, 1, Integer::sum);
 
