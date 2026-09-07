@@ -1,5 +1,10 @@
 package main
 
+type Pair struct {
+	vertex   int
+	distance int
+}
+
 type Graph struct {
 	vertices int
 	jumps    int
@@ -65,12 +70,14 @@ func (g *GraphPathBFS) bfsShortestPath(start, target int) int {
 	}
 
 	visited := make([]byte, g.graph.vertices)
-	queue := [][2]int{{start, 0}}
+	queue := []Pair{{start, 0}}
 	visited[start] = 1
 
 	for len(queue) > 0 {
-		v, dist := queue[0][0], queue[0][1]
+		current := queue[0]
 		queue = queue[1:]
+		v := current.vertex
+		dist := current.distance
 
 		for _, neighbor := range g.graph.adj[v] {
 			if neighbor == target {
@@ -79,7 +86,7 @@ func (g *GraphPathBFS) bfsShortestPath(start, target int) int {
 
 			if visited[neighbor] == 0 {
 				visited[neighbor] = 1
-				queue = append(queue, [2]int{neighbor, dist + 1})
+				queue = append(queue, Pair{neighbor, dist + 1})
 			}
 		}
 	}
@@ -117,12 +124,14 @@ func (g *GraphPathDFS) dfsFindPath(start, target int) int {
 	}
 
 	visited := make([]byte, g.graph.vertices)
-	stack := [][2]int{{start, 0}}
+	stack := []Pair{{start, 0}}
 	bestPath := int(^uint(0) >> 1)
 
 	for len(stack) > 0 {
-		v, dist := stack[len(stack)-1][0], stack[len(stack)-1][1]
+		current := stack[len(stack)-1]
 		stack = stack[:len(stack)-1]
+		v := current.vertex
+		dist := current.distance
 
 		if visited[v] == 1 || dist >= bestPath {
 			continue
@@ -135,7 +144,7 @@ func (g *GraphPathDFS) dfsFindPath(start, target int) int {
 					bestPath = dist + 1
 				}
 			} else if visited[neighbor] == 0 {
-				stack = append(stack, [2]int{neighbor, dist + 1})
+				stack = append(stack, Pair{neighbor, dist + 1})
 			}
 		}
 	}

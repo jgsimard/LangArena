@@ -90,10 +90,10 @@ class GraphPathDFS extends GraphPathBenchmark:
     if start == target then return 0
 
     val visited = new Array[Boolean](graph.vertices)
-    val stack = new java.util.ArrayDeque[Array[Int]]()
+    val stack = new java.util.ArrayDeque[(Int, Int)]()
     var bestPath = Int.MaxValue
 
-    stack.push(Array(start, 0))
+    stack.push((start, 0))
 
     while !stack.isEmpty do
       val current = stack.pop()
@@ -108,7 +108,7 @@ class GraphPathDFS extends GraphPathBenchmark:
           val neighbor = neighbors(j)
           if neighbor == target then
             if dist + 1 < bestPath then bestPath = dist + 1
-          else if !visited(neighbor) then stack.push(Array(neighbor, dist + 1))
+          else if !visited(neighbor) then stack.push((neighbor, dist + 1))
           j += 1
 
     if bestPath == Int.MaxValue then -1 else bestPath

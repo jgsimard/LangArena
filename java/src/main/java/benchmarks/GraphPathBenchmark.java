@@ -4,6 +4,16 @@ import java.util.*;
 
 public abstract class GraphPathBenchmark extends Benchmark {
 
+    static class Step {
+        final int vertex;
+        final int dist;
+
+        Step(int vertex, int dist) {
+            this.vertex = vertex;
+            this.dist = dist;
+        }
+    }
+
     static class Graph {
         final int vertices;
         final int jumps;
@@ -92,22 +102,22 @@ class GraphPathBFS extends GraphPathBenchmark {
         if (start == target) return 0;
 
         boolean[] visited = new boolean[graph.vertices];
-        Queue<int[]> queue = new ArrayDeque<>();
+        Queue<Step> queue = new ArrayDeque<>();
 
         visited[start] = true;
-        queue.add(new int[] {start, 0});
+        queue.add(new Step(start, 0));
 
         while (!queue.isEmpty()) {
-            int[] current = queue.poll();
-            int v = current[0];
-            int dist = current[1];
+            Step current = queue.poll();
+            int v = current.vertex;
+            int dist = current.dist;
 
             for (int neighbor : graph.adj.get(v)) {
                 if (neighbor == target) return dist + 1;
 
                 if (!visited[neighbor]) {
                     visited[neighbor] = true;
-                    queue.add(new int[] {neighbor, dist + 1});
+                    queue.add(new Step(neighbor, dist + 1));
                 }
             }
         }
@@ -132,15 +142,15 @@ class GraphPathDFS extends GraphPathBenchmark {
         if (start == target) return 0;
 
         boolean[] visited = new boolean[graph.vertices];
-        Deque<int[]> stack = new ArrayDeque<>();
+        Deque<Step> stack = new ArrayDeque<>();
         int bestPath = Integer.MAX_VALUE;
 
-        stack.push(new int[] {start, 0});
+        stack.push(new Step(start, 0));
 
         while (!stack.isEmpty()) {
-            int[] current = stack.pop();
-            int v = current[0];
-            int dist = current[1];
+            Step current = stack.pop();
+            int v = current.vertex;
+            int dist = current.dist;
 
             if (visited[v] || dist >= bestPath) continue;
             visited[v] = true;
@@ -151,7 +161,7 @@ class GraphPathDFS extends GraphPathBenchmark {
                         bestPath = dist + 1;
                     }
                 } else if (!visited[neighbor]) {
-                    stack.push(new int[] {neighbor, dist + 1});
+                    stack.push(new Step(neighbor, dist + 1));
                 }
             }
         }

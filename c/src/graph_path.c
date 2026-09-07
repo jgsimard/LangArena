@@ -1,6 +1,11 @@
 #include "benchmark.h"
 
 typedef struct {
+  int vertex;
+  int distance;
+} Pair;
+
+typedef struct {
   int vertices;
   int jumps;
   int jump_len;
@@ -114,16 +119,16 @@ static int graph_path_bfs_search(GraphPathGraph *graph, int start, int target) {
     return 0;
 
   uint8_t *visited = calloc(graph->vertices, sizeof(uint8_t));
-  int *queue = malloc(graph->vertices * 2 * sizeof(int));
+  Pair *queue = malloc(graph->vertices * sizeof(Pair));
   int front = 0, rear = 0;
 
   visited[start] = 1;
-  queue[rear++] = start;
-  queue[rear++] = 0;
+  queue[rear++] = (Pair){start, 0};
 
   while (front < rear) {
-    int v = queue[front++];
-    int dist = queue[front++];
+    Pair current = queue[front++];
+    int v = current.vertex;
+    int dist = current.distance;
 
     for (int i = 0; i < graph->adj_count[v]; i++) {
       int neighbor = graph->adj[v][i];
@@ -135,8 +140,7 @@ static int graph_path_bfs_search(GraphPathGraph *graph, int start, int target) {
 
       if (!visited[neighbor]) {
         visited[neighbor] = 1;
-        queue[rear++] = neighbor;
-        queue[rear++] = dist + 1;
+        queue[rear++] = (Pair){neighbor, dist + 1};
       }
     }
   }
@@ -190,16 +194,16 @@ static int graph_path_dfs_search(GraphPathGraph *graph, int start, int target) {
     return 0;
 
   uint8_t *visited = calloc(graph->vertices, sizeof(uint8_t));
-  int *stack = malloc(graph->vertices * 2 * sizeof(int));
+  Pair *stack = malloc(graph->vertices * sizeof(Pair));
   int stack_top = -1;
   int best_path = INT_MAX;
 
-  stack[++stack_top] = start;
-  stack[++stack_top] = 0;
+  stack[++stack_top] = (Pair){start, 0};
 
   while (stack_top >= 0) {
-    int dist = stack[stack_top--];
-    int v = stack[stack_top--];
+    Pair current = stack[stack_top--];
+    int v = current.vertex;
+    int dist = current.distance;
 
     if (visited[v] || dist >= best_path)
       continue;
@@ -211,8 +215,7 @@ static int graph_path_dfs_search(GraphPathGraph *graph, int start, int target) {
         if (dist + 1 < best_path)
           best_path = dist + 1;
       } else if (!visited[neighbor]) {
-        stack[++stack_top] = neighbor;
-        stack[++stack_top] = dist + 1;
+        stack[++stack_top] = (Pair){neighbor, dist + 1};
       }
     }
   }

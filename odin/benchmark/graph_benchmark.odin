@@ -5,6 +5,11 @@ import "core:container/queue"
 import "core:math"
 import "core:mem"
 
+Pair :: struct {
+	vertex:   int,
+	distance: int,
+}
+
 Graph :: struct {
 	vertices: int,
 	jumps:    int,
@@ -107,17 +112,17 @@ bfs_shortest_path :: proc(g: ^Graph, start, target: int) -> int {
 	visited := make([]bool, g.vertices)
 	defer delete(visited)
 
-	q: queue.Queue([2]int)
+	q: queue.Queue(Pair)
 	queue.init(&q)
 	defer queue.destroy(&q)
 
 	visited[start] = true
-	queue.push_back(&q, [2]int{start, 0})
+	queue.push_back(&q, Pair{start, 0})
 
 	for queue.len(q) > 0 {
 		item := queue.pop_front(&q)
-		v := item[0]
-		dist := item[1]
+		v := item.vertex
+		dist := item.distance
 
 		for neighbor in g.adj[v] {
 			if neighbor == target {
@@ -126,7 +131,7 @@ bfs_shortest_path :: proc(g: ^Graph, start, target: int) -> int {
 
 			if !visited[neighbor] {
 				visited[neighbor] = true
-				queue.push_back(&q, [2]int{neighbor, dist + 1})
+				queue.push_back(&q, Pair{neighbor, dist + 1})
 			}
 		}
 	}
@@ -174,17 +179,17 @@ dfs_find_path :: proc(g: ^Graph, start, target: int) -> int {
 	visited := make([]bool, g.vertices)
 	defer delete(visited)
 
-	stack: [dynamic][2]int
+	stack: [dynamic]Pair
 	defer delete(stack)
 
 	best_path := max(int)
 
-	append(&stack, [2]int{start, 0})
+	append(&stack, Pair{start, 0})
 
 	for len(stack) > 0 {
 		item := pop(&stack)
-		v := item[0]
-		dist := item[1]
+		v := item.vertex
+		dist := item.distance
 
 		if visited[v] || dist >= best_path {
 			continue
@@ -197,7 +202,7 @@ dfs_find_path :: proc(g: ^Graph, start, target: int) -> int {
 					best_path = dist + 1
 				}
 			} else if !visited[neighbor] {
-				append(&stack, [2]int{neighbor, dist + 1})
+				append(&stack, Pair{neighbor, dist + 1})
 			}
 		}
 	}

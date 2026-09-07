@@ -7,6 +7,12 @@ import std::core::mem;
 import std::core::string;
 import std::collections::priorityqueue;
 
+struct Pair
+{
+	int vertex;
+	int distance;
+}
+
 struct AStarItem
 {
 	int vertex;
@@ -140,18 +146,18 @@ fn int graph_path_bfs_search(GraphPathGraph* graph, int start, int target)
 	if (start == target) return 0;
 
 	char* visited = mem::new_array(char, (usz)graph.vertices);
-	int* queue    = mem::alloc_array(int, (usz)(graph.vertices * 2));
+	Pair* queue   = mem::alloc_array(Pair, (usz)graph.vertices);
 	int front     = 0;
 	int rear      = 0;
 
 	visited[start] = 1;
-	queue[rear++] = start;
-	queue[rear++] = 0;
+	queue[rear++] = { start, 0 };
 
 	while (front < rear)
 	{
-		int v    = queue[front++];
-		int dist = queue[front++];
+		Pair current = queue[front++];
+		int v        = current.vertex;
+		int dist     = current.distance;
 
 		for (int i = 0; i < graph.adj_count[v]; i++)
 		{
@@ -166,8 +172,7 @@ fn int graph_path_bfs_search(GraphPathGraph* graph, int start, int target)
 			if (!visited[neighbor])
 			{
 				visited[neighbor] = 1;
-				queue[rear++] = neighbor;
-				queue[rear++] = dist + 1;
+				queue[rear++] = { neighbor, dist + 1 };
 			}
 		}
 	}
@@ -224,17 +229,17 @@ fn int graph_path_dfs_search(GraphPathGraph* graph, int start, int target)
 	if (start == target) return 0;
 
 	char* visited =  mem::new_array(char, (usz)graph.vertices);
-	int* stack    =  mem::alloc_array(int, (usz)(graph.vertices * 2));
+	Pair* stack   =  mem::alloc_array(Pair, (usz)graph.vertices);
 	int stack_top = -1;
 	int best_path =  int::max;
 
-	stack[++stack_top] = start;
-	stack[++stack_top] = 0;
+	stack[++stack_top] = { start, 0 };
 
 	while (stack_top >= 0)
 	{
-		int dist = stack[stack_top--];
-		int v    = stack[stack_top--];
+		Pair current = stack[stack_top--];
+		int v        = current.vertex;
+		int dist     = current.distance;
 
 		if (visited[v] || dist >= best_path) continue;
 		visited[v] = 1;
@@ -251,8 +256,7 @@ fn int graph_path_dfs_search(GraphPathGraph* graph, int start, int target)
 			}
 			else if (!visited[neighbor])
 			{
-				stack[++stack_top] = neighbor;
-				stack[++stack_top] = dist + 1;
+				stack[++stack_top] = { neighbor, dist + 1 };
 			}
 		}
 	}
