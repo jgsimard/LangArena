@@ -89,7 +89,7 @@ object BrainfuckArray:
       val jmps = jumps
 
       while pc < cmds.length do
-        cmds(pc).toChar match
+        cmds(pc) match
           case '+' => tape.inc()
           case '-' => tape.dec()
           case '>' => tape.advance()
