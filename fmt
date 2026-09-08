@@ -13,7 +13,7 @@ LANG_MASKS = {
   'java' => ['./java', ['.java'], ['target'], "astyle -n --mode=java $@"],
   'kotlin' => ['./kotlin', ['.kt'], ['build', '.gradle', 'gradle'], "ktlint -F src/**/*.kt"],
   'typescript' => ['./typescript', ['.ts', '.tsx'], ['node_modules', 'target'], "npx oxfmt $@ < /dev/null"],
-  'zig' => ['./zig', ['.zig'], ['.zig-cache'], "zig fmt $@"],
+  'zig' => ['./zig', ['.zig'], ['.zig-cache', 'zig-pkg'], "zig fmt $@"],
   'd' => ['./d', ['.d'], [], "dfmt --inplace $@"],
   'v' => ['./v', ['.v'], ['target'], "v fmt -w $@"],
   'julia' => ['./julia', ['.jl'], ['target'], "julia -e 'using Pkg; Pkg.add(\"JuliaFormatter\"); using JuliaFormatter; format(\".\")'"],

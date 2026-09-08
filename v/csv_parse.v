@@ -95,5 +95,5 @@ pub fn (mut b CsvParse) run(iteration_id int) {
 }
 
 pub fn (b CsvParse) checksum() u32 {
-	return b.result_val
+	return b.result_val + helper.checksum_str(b.data)
 }

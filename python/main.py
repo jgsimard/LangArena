@@ -4386,7 +4386,7 @@ class CsvParse(Benchmark):
             line += f'"[{flag}\\n, {i % 100}]",'
             line += f'{y:.10f}'
             lines.append(line)
-        self.data = '\n'.join(lines)
+        self.data = '\n'.join(lines) + '\n'
 
     def _parse_points(self, data: str):
         points = []
@@ -4426,7 +4426,8 @@ class CsvParse(Benchmark):
                              Helper.checksum_float(z_avg)) & 0xFFFFFFFF
 
     def checksum(self) -> int:
-        return self.result_value & 0xFFFFFFFF
+        return (self.result_value +
+                Helper.checksum_string(self.data)) & 0xFFFFFFFF
 
     def name(self) -> str:
         return "CSV::Parse"

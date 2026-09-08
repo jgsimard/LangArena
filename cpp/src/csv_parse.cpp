@@ -65,4 +65,4 @@ void CsvParse::run(int iteration_id) {
                 Helper::checksum_f64(z_avg);
 }
 
-uint32_t CsvParse::checksum() { return result_val; }
+uint32_t CsvParse::checksum() { return result_val + Helper::checksum(data); }

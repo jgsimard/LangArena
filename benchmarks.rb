@@ -60,7 +60,7 @@ LANG_MASKS = {
   'java' => ['./java', ['.java'], ['target']],
   'kotlin' => ['./kotlin', ['.kt'], ['build', '.gradle', 'gradle']],
   'typescript' => ['./typescript', ['.ts', '.tsx'], ['node_modules', 'target']],
-  'zig' => ['./zig', ['.zig'], ['.zig-cache']],
+  'zig' => ['./zig', ['.zig'], ['.zig-cache', 'zig-pkg']],
   'd' => ['./d', ['.d'], []],
   'v' => ['./v', ['.v'], ['target']],
   'julia' => ['./julia', ['.jl'], ['target']],
@@ -729,7 +729,7 @@ RUNS = [
     dir: "/src/zig",
     container: "zig",
     group: :prod,
-    deps_cmd: "zig libc",
+    deps_cmd: "zig libc; zig build --fetch",
   ),
 
   Run.new(
@@ -741,7 +741,7 @@ RUNS = [
     dir: "/src/zig",
     container: "zig",
     group: :hack,
-    deps_cmd: "zig libc",
+    deps_cmd: "zig libc; zig build --fetch",
   ),
 
   # ======================================= crystal ======================================================

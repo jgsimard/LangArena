@@ -5,11 +5,154 @@ import helper;
 import std::io;
 import std::core::mem;
 import std::core::string;
-import std::encoding::csv;
 
 struct Point
 {
 	double x, y, z;
+}
+
+struct PointList
+{
+	Point* items;
+	int count;
+	int capacity;
+}
+
+fn void point_list_init(PointList* list)
+{
+	list.items = null;
+	list.count = 0;
+	list.capacity = 0;
+}
+
+fn int point_list_add(PointList* list, Point point)
+{
+	if (list.count >= list.capacity)
+	{
+		int new_capacity = list.capacity == 0 ? 16 : list.capacity * 2;
+		Point* new_items = mem::realloc(list.items, (usz)new_capacity * Point::size);
+		if (!new_items) return -1;
+		list.items = new_items;
+		list.capacity = new_capacity;
+	}
+	list.items[list.count++] = point;
+	return 0;
+}
+
+fn void point_list_free(PointList* list)
+{
+	mem::free(list.items);
+	list.items = null;
+	list.count = 0;
+	list.capacity = 0;
+}
+
+fn int parse_field_value(String field, double* value)
+{
+	if (field.len >= 2 && field[0] == '"' && field[^1] == '"')
+	{
+		field = field[1:field.len - 2];
+	}
+	*value = field.to_double() ?? 0;
+	return 0;
+}
+
+fn int parse_points(String csv_data, PointList* points)
+{
+	int field_idx    = 0;
+	usz field_start  = 0;
+	bool in_quotes   = false;
+	double[6] values = { 0, 0, 0, 0, 0, 0 };
+
+	usz pos = 0;
+	while (pos < csv_data.len)
+	{
+		char ch = csv_data[pos];
+
+		if (ch == '"')
+		{
+			if (in_quotes && pos + 1 < csv_data.len && csv_data[pos + 1] == '"')
+			{
+				pos += 2;
+				continue;
+			}
+			in_quotes = !in_quotes;
+			pos++;
+		}
+		else if (ch == ',' && !in_quotes)
+		{
+			if (field_idx == 1 || field_idx == 3 || field_idx == 5)
+			{
+				String field = csv_data[field_start:pos - field_start];
+				if (parse_field_value(field, &values[field_idx]) != 0)
+				{
+					return -1;
+				}
+			}
+			field_idx++;
+			field_start = pos + 1;
+			pos++;
+		}
+		else if (ch == '\n' && !in_quotes)
+		{
+			if (field_idx < 6)
+			{
+				if (field_idx == 1 || field_idx == 3 || field_idx == 5)
+				{
+					String field = csv_data[field_start:pos - field_start];
+					if (parse_field_value(field, &values[field_idx]) != 0)
+					{
+						return -1;
+					}
+				}
+				field_idx++;
+			}
+
+			if (field_idx >= 6)
+			{
+				Point point = { values[1], values[5], values[3] };
+				if (point_list_add(points, point) != 0)
+				{
+					return -1;
+				}
+			}
+
+			field_idx = 0;
+			field_start = pos + 1;
+			pos++;
+		}
+		else
+		{
+			pos++;
+		}
+	}
+
+	if (field_start < pos && field_idx > 0)
+	{
+		if (field_idx < 6)
+		{
+			if (field_idx == 1 || field_idx == 3 || field_idx == 5)
+			{
+				String field = csv_data[field_start:pos - field_start];
+				if (parse_field_value(field, &values[field_idx]) != 0)
+				{
+					return -1;
+				}
+			}
+			field_idx++;
+		}
+
+		if (field_idx >= 6)
+		{
+			Point point = { values[1], values[5], values[3] };
+			if (point_list_add(points, point) != 0)
+			{
+				return -1;
+			}
+		}
+	}
+
+	return points.count;
 }
 
 struct CsvParseData
@@ -67,94 +210,36 @@ fn void csv_parse_run(Benchmark* self, int iteration_id)
 	CsvParseData* data = (CsvParseData*)self.data;
 	if (data.csv_data.len == 0) return;
 
-	Point* points   = mem::alloc_array(Point, (usz)data.rows);
-	int point_count = 0;
+	PointList points;
+	point_list_init(&points);
 
-	Splitter line_splitter = data.csv_data.tokenize("\n");
-
-	while (try line = line_splitter.next())
-	{
-		if (line.len == 0 || point_count >= (int)data.rows) continue;
-
-		double x       = 0;
-		double y       = 0;
-		double z       = 0;
-		int field_idx  = 0;
-		usz start      = 0;
-		bool in_quotes = false;
-
-		for (usz p = 0; p < line.len && field_idx < 6; p++)
-		{
-			char ch = line[p];
-			if (ch == '"')
-			{
-				in_quotes = !in_quotes;
-			}
-			else if (ch == ',' && !in_quotes)
-			{
-				if (field_idx == 1 || field_idx == 3 || field_idx == 5)
-				{
-					String field = line[start:p - start];
-
-					if (field.len >= 2 && field[0] == '"' && field[^1] == '"')
-					{
-						field = field[1:field.len - 2];
-					}
-					double val = field.to_double() ?? 0;
-					if (field_idx == 1) x = val;
-					if (field_idx == 3) z = val;
-					if (field_idx == 5) y = val;
-				}
-				field_idx++;
-				start = p + 1;
-			}
-		}
-
-		if (field_idx == 5 && start < line.len)
-		{
-			String field = line[start:line.len - start];
-			if (field.len >= 2 && field[0] == '"' && field[^1] == '"')
-			{
-				field = field[1:field.len - 2];
-			}
-			y = field.to_double() ?? 0;
-			field_idx++;
-		}
-
-		if (field_idx >= 6)
-		{
-			points[point_count].x = x;
-			points[point_count].y = y;
-			points[point_count].z = z;
-			point_count++;
-		}
-	}
+	int point_count = parse_points(data.csv_data, &points);
 
 	if (point_count > 0)
 	{
 		double x_sum = 0;
 		double y_sum = 0;
 		double z_sum = 0;
-		for (int i = 0; i < point_count; i++)
+		for (int i = 0; i < points.count; i++)
 		{
-			x_sum += points[i].x;
-			y_sum += points[i].y;
-			z_sum += points[i].z;
+			x_sum += points.items[i].x;
+			y_sum += points.items[i].y;
+			z_sum += points.items[i].z;
 		}
 
-		double len = (double)point_count;
+		double len = (double)points.count;
 		data.result_val += helper::helper_checksum_f64(
 			x_sum / len
 		) + helper::helper_checksum_f64(y_sum / len) + helper::helper_checksum_f64(z_sum / len);
 	}
 
-	mem::free(points);
+	point_list_free(&points);
 }
 
 fn uint csv_parse_checksum(Benchmark* self)
 {
 	CsvParseData* data = (CsvParseData*)self.data;
-	return data.result_val;
+	return data.result_val + helper::helper_checksum_string(data.csv_data);
 }
 
 fn void csv_parse_cleanup(Benchmark* self)

@@ -82,6 +82,6 @@ public class CsvParse : Benchmark
         _result += Helper.Checksum(xAvg) + Helper.Checksum(yAvg) + Helper.Checksum(zAvg);
     }
 
-    public override uint Checksum => _result;
+    public override uint Checksum => _result + Helper.Checksum(_data);
     public override string TypeName => "CSV::Parse";
 }

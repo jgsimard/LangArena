@@ -5167,7 +5167,7 @@ class CsvParse extends Benchmark {
 
   @override
   int checksum() {
-    return resultValue & 0xFFFFFFFF;
+    return (resultValue + Helper.checksumString(data)) & 0xFFFFFFFF;
   }
 }
 

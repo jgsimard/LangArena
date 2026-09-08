@@ -89,5 +89,5 @@ func (c *CsvParse) Run(iteration_id int) {
 }
 
 func (c *CsvParse) Checksum() uint32 {
-	return c.result
+	return c.result + Checksum(c.data)
 }

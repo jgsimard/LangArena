@@ -1,4 +1,5 @@
 const std = @import("std");
+const csvz = @import("csvzero");
 const Benchmark = @import("benchmark.zig").Benchmark;
 const Helper = @import("helper.zig").Helper;
 
@@ -80,37 +81,40 @@ pub const CsvParse = struct {
         z: f64,
     };
 
-    fn parseCSVLine(line: []const u8) !Point {
-        var fields: [6][]const u8 = undefined;
-        var field_idx: usize = 0;
+    fn parse_points(self: *CsvParse, points: *std.ArrayList(Point)) !void {
+        var reader = std.Io.Reader.fixed(self.data);
+        var it = csvz.Iterator.init(&reader);
 
-        var start: usize = 0;
-        var in_quotes = false;
+        var col_idx: usize = 0;
+        var current_x: f64 = 0.0;
+        var current_z: f64 = 0.0;
+        var current_y: f64 = 0.0;
 
-        for (line, 0..) |ch, i| {
-            if (ch == '"') {
-                in_quotes = !in_quotes;
-            } else if (ch == ',' and !in_quotes) {
-                if (field_idx < 6) {
-                    fields[field_idx] = line[start..i];
-                    field_idx += 1;
-                    start = i + 1;
-                }
+        while (true) {
+            const field = it.next() catch |err| switch (err) {
+                error.EOF => break,
+                else => return err,
+            };
+
+            switch (col_idx) {
+                1 => current_x = std.fmt.parseFloat(f64, field.data) catch 0.0,
+                3 => current_z = std.fmt.parseFloat(f64, field.data) catch 0.0,
+                5 => current_y = std.fmt.parseFloat(f64, field.data) catch 0.0,
+                else => {},
+            }
+
+            col_idx += 1;
+
+            if (field.last_column) {
+                try points.append(self.allocator, .{
+                    .x = current_x,
+                    .y = current_y,
+                    .z = current_z,
+                });
+
+                col_idx = 0;
             }
         }
-
-        if (field_idx < 6) {
-            fields[field_idx] = line[start..];
-            field_idx += 1;
-        }
-
-        if (field_idx < 6) return error.InvalidCSV;
-
-        const x = std.fmt.parseFloat(f64, fields[1]) catch return error.InvalidFloat;
-        const z = std.fmt.parseFloat(f64, fields[3]) catch return error.InvalidFloat;
-        const y = std.fmt.parseFloat(f64, fields[5]) catch return error.InvalidFloat;
-
-        return Point{ .x = x, .y = y, .z = z };
     }
 
     fn runImpl(ptr: *anyopaque, iteration_id: i64) void {
@@ -122,17 +126,7 @@ pub const CsvParse = struct {
         var points: std.ArrayList(Point) = .empty;
         defer points.deinit(self.allocator);
 
-        var lines = std.mem.splitScalar(u8, self.data, '\n');
-
-        while (lines.next()) |line| {
-            if (line.len == 0) continue;
-
-            if (parseCSVLine(line)) |point| {
-                points.append(self.allocator, point) catch continue;
-            } else |_| {
-                continue;
-            }
-        }
+        self.parse_points(&points) catch return;
 
         if (points.items.len == 0) return;
 
@@ -158,7 +152,7 @@ pub const CsvParse = struct {
 
     fn checksumImpl(ptr: *anyopaque) u32 {
         const self: *CsvParse = @ptrCast(@alignCast(ptr));
-        return self.result_val;
+        return self.result_val +% self.helper.checksumString(self.data);
     }
 
     fn deinitImpl(ptr: *anyopaque) void {

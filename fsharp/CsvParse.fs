@@ -82,4 +82,4 @@ type CsvParse() =
 
         result <- result + Helper.Checksum(xAvg) + Helper.Checksum(yAvg) + Helper.Checksum(zAvg)
 
-    override this.Checksum = result
+    override this.Checksum = result + Helper.Checksum(data)

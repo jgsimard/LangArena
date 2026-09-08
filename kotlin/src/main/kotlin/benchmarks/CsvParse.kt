@@ -99,5 +99,5 @@ class CsvParse : Benchmark() {
         resultVal += Helper.checksumF64(xAvg) + Helper.checksumF64(yAvg) + Helper.checksumF64(zAvg)
     }
 
-    override fun checksum(): UInt = resultVal
+    override fun checksum(): UInt = resultVal + Helper.checksum(data)
 }

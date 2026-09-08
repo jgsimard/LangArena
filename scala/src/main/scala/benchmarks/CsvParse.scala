@@ -93,5 +93,5 @@ class CsvParse extends Benchmark {
     resultVal += Helper.checksumF64(xAvg) + Helper.checksumF64(yAvg) + Helper.checksumF64(zAvg)
   }
 
-  override def checksum(): Long = resultVal
+  override def checksum(): Long = resultVal + Helper.checksum(data)
 }

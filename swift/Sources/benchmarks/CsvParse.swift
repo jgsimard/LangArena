@@ -11,9 +11,7 @@ final class CsvParse: BenchmarkProtocol {
   }
 
   func prepare() {
-    var lines: [String] = []
-    lines.reserveCapacity(rows)
-    lines.append("name,x,z,options,y")
+    var res = "name,x,z,options,y\n"
 
     for i in 0..<rows {
       let asciiValue = UInt8(65 + (i % 26))
@@ -21,17 +19,17 @@ final class CsvParse: BenchmarkProtocol {
       let x = Helper.nextFloat(max: 1.0)
       let z = Helper.nextFloat(max: 1.0)
       let y = Helper.nextFloat(max: 1.0)
-      var line = "\"point \(c)\\n, \"\"\(i % 100)\"\"\","
-      line += String(format: "%.10f,", x)
-      line += ","
-      line += String(format: "%.10f,", z)
+      res += "\"point \(c)\\n, \"\"\(i % 100)\"\"\","
+      res += String(format: "%.10f,", x)
+      res += ","
+      res += String(format: "%.10f,", z)
       let flag = i % 2 == 0 ? "true" : "false"
-      line += "\"[\(flag)\\n, \(i % 100)]\","
-      line += String(format: "%.10f", y)
-      lines.append(line)
+      res += "\"[\(flag)\\n, \(i % 100)]\","
+      res += String(format: "%.10f", y)
+      res += "\n"
     }
 
-    data = lines.joined(separator: "\n")
+    data = res
   }
 
   struct Point {
@@ -78,6 +76,11 @@ final class CsvParse: BenchmarkProtocol {
     }
   }
 
-  var checksum: UInt32 { return resultVal }
+  var checksum: UInt32 {
+    if let firstNewline = data.firstIndex(of: "\n") {
+      data = String(data[data.index(after: firstNewline)...])
+    }
+    return resultVal &+ Helper.checksum(data)
+  }
   func name() -> String { return "CSV::Parse" }
 }

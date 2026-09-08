@@ -83,7 +83,7 @@
   },
   {
     "name": "CSV::Parse",
-    "checksum": 649234512,
+    "checksum": 3563398641,
     "rows": 11,
     "iterations": 3
   },

@@ -82,5 +82,5 @@ function run(b::CsvParse, iteration_id::Int64)
 end
 
 function checksum(b::CsvParse)::UInt32
-    return b.result
+    return (b.result + Helper.checksum(b.data)) & 0xffffffff
 end

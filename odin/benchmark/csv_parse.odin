@@ -113,7 +113,7 @@ parse_points :: proc(data: string) -> []Point {
 
 csvparse_checksum :: proc(bench: ^Benchmark) -> u32 {
 	cp := cast(^CsvParse)bench
-	return cp.result_val
+	return cp.result_val + checksum_string(cp.data)
 }
 
 csvparse_cleanup :: proc(bench: ^Benchmark) {

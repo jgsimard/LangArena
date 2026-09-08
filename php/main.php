@@ -2336,7 +2336,7 @@ class CSVParse extends Benchmark
 
     public function checksum(): int
     {
-        return $this->checksum_val & 0xFFFFFFFF;
+        return ($this->checksum_val + Helper::checksum($this->data)) & 0xFFFFFFFF;
     }
 }
 

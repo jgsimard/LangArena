@@ -110,6 +110,6 @@ impl Benchmark for CsvParse {
     }
 
     fn checksum(&self) -> u32 {
-        self.checksum
+        self.checksum.wrapping_add(helper::checksum_str(&self.data))
     }
 }

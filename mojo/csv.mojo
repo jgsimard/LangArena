@@ -66,10 +66,7 @@ struct CsvParse(Benchmark, Movable):
         var reader = csv_mod.reader(io_mod.StringIO(self.data))
         var rows_list = builtins.list(reader)
 
-        var x_sum: Float64 = 0.0
-        var y_sum: Float64 = 0.0
-        var z_sum: Float64 = 0.0
-        var count = 0
+        var points = List[CsvPoint]()
 
         for i in range(Int(py=rows_list.__len__())):
             var row = rows_list[i]
@@ -79,14 +76,21 @@ struct CsvParse(Benchmark, Movable):
                 var z = atof(StringSlice(String(py=row[3])))
                 var y = atof(StringSlice(String(py=row[5])))
 
-                x_sum += x
-                y_sum += y
-                z_sum += z
-                count += 1
+                points.append(CsvPoint(x, y, z))
 
-        if count == 0:
+        if len(points) == 0:
             return
 
+        var x_sum: Float64 = 0.0
+        var y_sum: Float64 = 0.0
+        var z_sum: Float64 = 0.0
+
+        for point in points:
+            x_sum += point.x
+            y_sum += point.y
+            z_sum += point.z
+
+        var count = len(points)
         var x_avg = x_sum / Float64(count)
         var y_avg = y_sum / Float64(count)
         var z_avg = z_sum / Float64(count)
@@ -96,7 +100,7 @@ struct CsvParse(Benchmark, Movable):
         self._checksum = self._checksum + Helper.checksum_f64(z_avg)
 
     def checksum(self) -> UInt32:
-        return self._checksum
+        return self._checksum + Helper.checksum_string(self.data)
 
     @staticmethod
     def _format_f64(v: Float64) -> String:

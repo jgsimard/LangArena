@@ -32,7 +32,7 @@ method prepare(self: CsvParse) =
     line.add fmt"{y:.10f}"
     lines[i] = line
 
-  self.data = lines.join("\n")
+  self.data = lines.join("\n") & "\n"
   self.resultVal = 0
 
 type Point = tuple[x, y, z: float]
@@ -71,7 +71,7 @@ method run(self: CsvParse, iteration_id: int) =
       checksumF64(zAvg)
 
 method checksum(self: CsvParse): uint32 =
-  self.resultVal
+  self.resultVal + checksum(self.data)
 
 registerBenchmark("CSV::Parse", newCsvParse)
 {.used.}

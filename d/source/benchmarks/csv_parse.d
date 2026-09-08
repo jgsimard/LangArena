@@ -104,6 +104,6 @@ public:
 
     override uint checksum()
     {
-        return resultVal;
+        return resultVal + Helper.checksum(csvData);
     }
 }

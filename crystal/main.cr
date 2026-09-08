@@ -4205,7 +4205,7 @@ class CSV
     end
 
     def checksum : UInt32
-      @checksum
+      @checksum &+ Helper.checksum(@data)
     end
   end
 end

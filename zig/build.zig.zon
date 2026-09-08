@@ -1,0 +1,12 @@
+.{
+    .name = .zig,
+    .version = "0.16.0",
+    .dependencies = .{
+        .csvzero = .{
+            .url = "git+https://github.com/peymanmortazavi/csv-zero.git#a687d508e57b1cd62dc1efa7d90f268055e1ca46",
+            .hash = "csvzero-0.2.0-YQXXvD3GAAB60CVoVAuz64YS3Lg3okE2UKRPviOe2lcL",
+        },
+    },
+    .paths = .{""},
+    .fingerprint = 0xc1ce10814b6ea7f6,
+}

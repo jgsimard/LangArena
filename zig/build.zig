@@ -3,12 +3,16 @@ const std = @import("std");
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
 
+    const csvzero_dep = b.dependency("csvzero", .{});
+    const csvzero_mod = csvzero_dep.module("csvzero");
+
     const debug_mod = b.createModule(.{
         .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = .Debug,
         .link_libc = true,
     });
+    debug_mod.addImport("csvzero", csvzero_mod);
     const debug_exe = b.addExecutable(.{ .name = "benchmarks", .root_module = debug_mod });
     debug_exe.root_module.linkSystemLibrary("pcre2-8", .{});
     b.installArtifact(debug_exe);
@@ -19,6 +23,7 @@ pub fn build(b: *std.Build) void {
         .optimize = .ReleaseSafe,
         .link_libc = true,
     });
+    zig_mod.addImport("csvzero", csvzero_mod);
     const zig_exe = b.addExecutable(.{ .name = "zig", .root_module = zig_mod });
     zig_exe.root_module.linkSystemLibrary("pcre2-8", .{});
     b.installArtifact(zig_exe);
@@ -29,6 +34,7 @@ pub fn build(b: *std.Build) void {
         .optimize = .ReleaseFast,
         .link_libc = true,
     });
+    unchecked_mod.addImport("csvzero", csvzero_mod);
     const unchecked_exe = b.addExecutable(.{ .name = "zig-unchecked", .root_module = unchecked_mod });
     unchecked_exe.root_module.linkSystemLibrary("pcre2-8", .{});
     b.installArtifact(unchecked_exe);
@@ -39,6 +45,7 @@ pub fn build(b: *std.Build) void {
         .optimize = .ReleaseFast,
         .link_libc = true,
     });
+    maxperf_mod.addImport("csvzero", csvzero_mod);
     const maxperf_exe = b.addExecutable(.{ .name = "zig-maxperf", .root_module = maxperf_mod });
     maxperf_exe.root_module.linkSystemLibrary("pcre2-8", .{});
     b.installArtifact(maxperf_exe);
@@ -49,6 +56,7 @@ pub fn build(b: *std.Build) void {
         .optimize = .ReleaseFast,
         .link_libc = true,
     });
+    legacy_mod.addImport("csvzero", csvzero_mod);
     const legacy_exe = b.addExecutable(.{ .name = "benchmarks-release", .root_module = legacy_mod });
     legacy_exe.root_module.linkSystemLibrary("pcre2-8", .{});
     b.installArtifact(legacy_exe);

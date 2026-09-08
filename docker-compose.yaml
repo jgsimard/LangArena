@@ -93,6 +93,7 @@ services:
       - .:/src
 
       - ./cache/deps/zig/global:/root/.cache/zig
+      - ./cache/deps/zig/zig-pkg:/src/zig/zig-pkg
 
       - ./cache/build/zig/build-cache:/src/zig/.zig-cache
       - ./cache/build/zig/out:/src/zig/zig-out

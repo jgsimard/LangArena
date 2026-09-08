@@ -102,7 +102,7 @@ public class CsvParse extends Benchmark {
 
     @Override
     public long checksum() {
-        return resultVal;
+        return resultVal + Helper.checksum(this.data);
     }
 
     private static class Point {

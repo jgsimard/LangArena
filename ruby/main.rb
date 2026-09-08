@@ -4303,7 +4303,7 @@ module CSVModule
     end
 
     def checksum
-      @checksum & 0xFFFFFFFF
+      (@checksum + Helper.checksum(@data)) & 0xFFFFFFFF
     end
   end
 end
