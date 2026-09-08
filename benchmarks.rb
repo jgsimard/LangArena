@@ -2513,7 +2513,7 @@ tests = JSON.parse(test_txt).map { |h| h["name"] }
 TESTS = case ARGV[1]
 when nil, ""
   tests
-when "rand", "Rand", "r", "r"
+when "rand", "Rand", "r", "R"
   tests.sample(1)
 else
   regx = /#{Regexp.escape ARGV[1]}/
@@ -2633,7 +2633,7 @@ write_results
 
 def run(run, index)
   # run.remove_binary
-  run.run(run.build_cmd, false) # build still neded because swift, java, kotlin, typescript all use same binary
+  run.run(run.build_cmd, false) # build still needed because swift, java, kotlin, typescript all use same binary
 
   summary = 0.0
   memory = 0.0
@@ -2648,8 +2648,6 @@ def run(run, index)
     mem = stats[:rss] / 1024.0
     memory += mem
     RESULTS[test_name+"-mem-mb"][run.name] = mem
-
-    RESULTS[test_name+"-mem-mb"][run.name]
 
     if stats[:out] =~ /#{test_name}: OK in ([\d\.]+)s/      
       run_time = $1.to_f
