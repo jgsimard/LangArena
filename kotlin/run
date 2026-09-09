@@ -1,4 +1,4 @@
 #!/bin/bash
 rm -f ./build/libs/benchmarks.jar
 ./gradlew fatJar --no-daemon -q
-../xtime.rb java -server -jar ./build/libs/benchmarks.jar ../run.js $@
+../xtime.rb java -Xmx512m -jar ./build/libs/benchmarks.jar ../run.js $@

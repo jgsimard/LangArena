@@ -1676,16 +1676,12 @@ RUNS = [
   Run.new(
     name: "Java/OpenJDK",
     build_cmd: <<~CMD.chomp,
-      mvn compile package -Pjava-plain \
-        -DskipTests \
-        -Dmaven.test.skip=true \
-        -q
+      mvn compile package -Pjava-plain -q
     CMD
     binary_name: "./target/java-benchmarks-1.0-SNAPSHOT.jar",
     run_cmd: <<~CMD.chomp,
       java \
-        -Xmx8g \
-        -Dfile.encoding=UTF-8 \
+        -Xmx2g \
         -jar ./target/java-benchmarks-1.0-SNAPSHOT.jar
     CMD
     version_cmd: "java --version",
@@ -1698,17 +1694,13 @@ RUNS = [
   Run.new(
     name: "Java/OpenJDK/Serial",
     build_cmd: <<~CMD.chomp,
-      mvn compile package -Pjava-plain \
-        -DskipTests \
-        -Dmaven.test.skip=true \
-        -q
+      mvn compile package -Pjava-plain -q
     CMD
     binary_name: "./target/java-benchmarks-1.0-SNAPSHOT.jar",
     run_cmd: <<~CMD.chomp,
       java \
         -Xmx512m \
         -XX:+UseSerialGC \
-        -Dfile.encoding=UTF-8 \
         -jar ./target/java-benchmarks-1.0-SNAPSHOT.jar
     CMD
     version_cmd: "java --version",
@@ -1721,15 +1713,11 @@ RUNS = [
   Run.new(
     name: "Java/OpenJDK/Opt",
     build_cmd: <<~CMD.chomp,
-      mvn compile package -Pjava-optimized \
-        -DskipTests \
-        -Dmaven.test.skip=true \
-        -q
+      mvn compile package -Pjava-plain -q
     CMD
     binary_name: "./target/java-benchmarks-1.0-SNAPSHOT.jar",
     run_cmd: <<~CMD.chomp,
       java \
-        -Dfile.encoding=UTF-8 \
         -XX:+UseParallelGC \
         -XX:+UseLargePages \
         -XX:+AlwaysPreTouch \
@@ -1738,7 +1726,7 @@ RUNS = [
         -XX:+UseStringDeduplication \
         -XX:+DisableExplicitGC \
         -XX:+UseCountedLoopSafepoints \
-        -Xmx8g \
+        -Xmx2g \
         -jar ./target/java-benchmarks-1.0-SNAPSHOT.jar
     CMD
     version_cmd: "java --version",
@@ -1751,21 +1739,12 @@ RUNS = [
   Run.new(
     name: "Java/GraalVM/JIT",
     build_cmd: <<~CMD.chomp,
-      mvn compile package -Pgraalvm-jit \
-        -DskipTests \
-        -Dmaven.test.skip=true \
-        -q
+      mvn compile package -Pjava-plain -q
     CMD
     binary_name: "./target/java-benchmarks-1.0-SNAPSHOT.jar",
     run_cmd: <<~CMD.chomp,
       java \
-        -Dfile.encoding=UTF-8 \
-        -XX:+UseG1GC \
-        -XX:+EnableJVMCI \
-        -XX:+UseJVMCICompiler \
-        -Djvmci.Compiler=graal \
-        -XX:-TieredCompilation \
-        -Xmx8g \
+        -Xmx2g \
         -jar ./target/java-benchmarks-1.0-SNAPSHOT.jar
     CMD
     version_cmd: "java --version",
@@ -1778,21 +1757,13 @@ RUNS = [
   Run.new(
     name: "Java/GraalVM/Serial",
     build_cmd: <<~CMD.chomp,
-      mvn compile package -Pgraalvm-jit \
-        -DskipTests \
-        -Dmaven.test.skip=true \
-        -q
+      mvn compile package -Pjava-plain -q
     CMD
     binary_name: "./target/java-benchmarks-1.0-SNAPSHOT.jar",
     run_cmd: <<~CMD.chomp,
       java \
-        -Dfile.encoding=UTF-8 \
         -XX:+UseSerialGC \
-        -XX:+EnableJVMCI \
-        -XX:+UseJVMCICompiler \
-        -Djvmci.Compiler=graal \
-        -XX:-TieredCompilation \
-        -Xmx8g \
+        -Xmx512m \
         -jar ./target/java-benchmarks-1.0-SNAPSHOT.jar
     CMD
     version_cmd: "java --version",
@@ -1861,7 +1832,7 @@ RUNS = [
     name: "Kotlin/JVM/Default",
     build_cmd: "./gradlew fatJar --no-daemon -q",
     binary_name: "/src/kotlin/build/libs/benchmarks.jar",
-    run_cmd: "java -Xmx8g -jar /src/kotlin/build/libs/benchmarks.jar",
+    run_cmd: "java -Xmx2g -jar /src/kotlin/build/libs/benchmarks.jar",
     version_cmd: "kotlin -version",
     dir: "/src/kotlin",
     container: "kotlin",
@@ -1875,14 +1846,12 @@ RUNS = [
     binary_name: "/src/kotlin/build/libs/benchmarks.jar",
     run_cmd: <<~CMD.chomp,
       java \
-        -server \
         -XX:+UseG1GC \
         -Xms2g \
-        -Xmx2g \
         -XX:+AlwaysPreTouch \
         -XX:+OptimizeStringConcat \
         -XX:+UseCompressedOops \
-        -Xmx8g \
+        -Xmx2g \
         -jar /src/kotlin/build/libs/benchmarks.jar
     CMD
     version_cmd: "kotlin -version",
@@ -1898,14 +1867,12 @@ RUNS = [
     binary_name: "/src/kotlin/build/libs/benchmarks.jar",
     run_cmd: <<~CMD.chomp,
       java \
-        -server \
         -XX:+UseParallelGC \
         -Xms4g \
         -Xmx8g \
         -XX:+AlwaysPreTouch \
         -XX:+UseLargePages \
         -XX:+DisableExplicitGC \
-        -Djava.security.egd=file:/dev/./urandom \
         -jar /src/kotlin/build/libs/benchmarks.jar
     CMD
     version_cmd: "kotlin -version",
@@ -1921,12 +1888,7 @@ RUNS = [
     binary_name: "/src/kotlin/build/libs/benchmarks.jar",
     run_cmd: <<~CMD.chomp,
       java \
-        -XX:+UseG1GC \
-        -XX:+EnableJVMCI \
-        -XX:+UseJVMCICompiler \
-        -Djvmci.Compiler=graal \
-        -XX:-TieredCompilation \
-        -Xmx8g \
+        -Xmx2g \
         -jar /src/kotlin/build/libs/benchmarks.jar
     CMD
     version_cmd: "kotlin -version",
@@ -1983,7 +1945,7 @@ RUNS = [
     name: "Scala/JVM/Default",
     build_cmd: "sbt 'assembly'",
     binary_name: "/src/scala/target/benchmark.jar",
-    run_cmd: "java -Xmx8g -jar /src/scala/target/benchmark.jar",
+    run_cmd: "java -Xmx2g -jar /src/scala/target/benchmark.jar",
     version_cmd: "scala -version",
     dir: "/src/scala",
     container: "scala",
@@ -1997,14 +1959,12 @@ RUNS = [
     binary_name: "/src/scala/target/benchmark.jar",
     run_cmd: <<~CMD.chomp,
       java \
-        -server \
         -XX:+UseG1GC \
         -Xms2g \
         -Xmx2g \
         -XX:+AlwaysPreTouch \
         -XX:+OptimizeStringConcat \
         -XX:+UseCompressedOops \
-        -Xmx8g \
         -jar /src/scala/target/benchmark.jar
     CMD
     version_cmd: "scala -version",
@@ -2020,7 +1980,6 @@ RUNS = [
     binary_name: "/src/scala/target/benchmark.jar",
     run_cmd: <<~CMD.chomp,
       java \
-        -server \
         -XX:+UseParallelGC \
         -Xms4g \
         -Xmx8g \
@@ -2043,12 +2002,7 @@ RUNS = [
     binary_name: "/src/scala/target/benchmark.jar",
     run_cmd: <<~CMD.chomp,
       java \
-        -XX:+UseG1GC \
-        -XX:+EnableJVMCI \
-        -XX:+UseJVMCICompiler \
-        -Djvmci.Compiler=graal \
-        -XX:-TieredCompilation \
-        -Xmx8g \
+        -Xmx2g \
         -jar /src/scala/target/benchmark.jar
     CMD
     version_cmd: "scala -version",
