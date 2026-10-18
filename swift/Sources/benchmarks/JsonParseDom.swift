@@ -9,14 +9,7 @@ final class JsonParseDom: BenchmarkProtocol {
     generator.n = configValue("coords") ?? 0
     generator.prepare()
     generator.run(iterationId: 0)
-
-    let mirror = Mirror(reflecting: generator)
-    for child in mirror.children {
-      if child.label == "text" {
-        text = child.value as? String ?? ""
-        break
-      }
-    }
+    text = generator.getResult()
   }
 
   private func calcDom(_ text: String) -> (Double, Double, Double) {
@@ -57,6 +50,7 @@ final class JsonParseDom: BenchmarkProtocol {
   var checksum: UInt32 {
     return resultVal
   }
+
   func name() -> String {
     return "Json::ParseDom"
   }

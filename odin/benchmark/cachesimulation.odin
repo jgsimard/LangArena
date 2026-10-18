@@ -185,7 +185,7 @@ cachesimulation_run :: proc(bench: ^Benchmark, iteration_id: int) {
 		} else {
 			cs.misses += 1
 
-			stored_key := strings.clone(fmt.bprintf(key_buf[:], "item_%d", key_idx))
+			stored_key := strings.clone(key)
 			stored_value := strings.clone(fmt.bprintf(val_buf[:], "new_%d", iteration_id))
 
 			lru_cache_put(&cs.cache, stored_key, stored_value)
@@ -209,6 +209,9 @@ cachesimulation_prepare :: proc(bench: ^Benchmark) {
 	cs.values_size = int(config_i64("Etc::CacheSimulation", "values"))
 	cs.cache_size = int(config_i64("Etc::CacheSimulation", "size"))
 
+	if cs.cache.capacity > 0 {
+		lru_cache_destroy(&cs.cache)
+	}
 	lru_cache_init(&cs.cache, cs.cache_size)
 
 	cs.hits = 0

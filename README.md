@@ -4,9 +4,9 @@
 
 ## What is it?
 
-My experiment. It evaluates 27 programming languages across 50 real-world-inspired tasks using 5 metrics: runtime, runtime score, memory usage, compile time, and expressiveness. The results are aggregated to provide a rough picture of each language's performance. This is a comparative evaluation, not a race to crown the fastest language. 8/50 tests cover ecosystem capabilities JSON, CSV, Regexp - while the rest are pure algorithms.
+My experiment. It evaluates 27 programming languages across 50 real-world-inspired tasks using 5 metrics: runtime, runtime score, memory usage, compile time, and expressiveness. The results are aggregated to provide a rough picture of each language's performance. This is a comparative evaluation, not a race to crown the fastest language. 8/50 tests cover ecosystem capabilities Base64, JSON, CSV, Regexp - while the rest are pure algorithms.
 
-The implementations follow a simple, Rosetta Code-like approach: comparable implementations of the same algorithms, with exceptions where necessary. The aim is not to squeeze the maximum performance out of each language, but to write roughly equivalent code across languages. Idiomatic constructs are used where they don't compromise comparability. This reflects typical production code written by teams: readable, maintainable solutions using standard libraries, familiar idioms, and conventional compiler flags.
+The implementations follow a simple, Rosetta Code-like approach: comparable implementations of the same algorithms, with exceptions where necessary. The aim is not to squeeze the maximum performance out of each language, but to write roughly equivalent code across languages. Idiomatic constructs are used where they don't compromise comparability. This reflects typical production code written by teams: readable, maintainable solutions using standard containers, libraries, idioms, and compiler flags.
 
 The suite began with my original implementation in Crystal. The other languages were ported from it with LLM assistance. Each task has a checksum to validate implementation correctness and prevent DCE.
 
@@ -36,7 +36,7 @@ Participating Compilers/Runtimes:
 * `Swift`: [Swift](https://swift.org/)
 * `Odin`: [Odin](https://odin-lang.org/)
 * `C3`: [C3](https://c3-lang.org/)
-* `Java`: [OpenJDK](https://openjdk.org/), [GraalVM](https://www.graalvm.org/)
+* `Java`: [OpenJDK](https://openjdk.org/), [OpenJDK/EA](https://jdk.java.net/28/), [GraalVM](https://www.graalvm.org/)
 * `Kotlin`: [Kotlin/JVM](https://kotlinlang.org/), [Kotlin/GraalVM](https://www.graalvm.org/)
 * `Scala`: [Scala/JVM](https://www.scala-lang.org/), [Scala/GraalVM](https://www.graalvm.org/)
 * `Dart`: [Dart/AOT, Dart/JIT](https://dart.dev/)

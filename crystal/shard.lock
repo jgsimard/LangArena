@@ -4,3 +4,7 @@ shards:
     git: https://github.com/syeopite/cryyjson.git
     version: 0.1.0+git.commit.2b818b5ae72790e75a9237a33789436dcdbfc3b3
 
+  gcry:
+    git: https://github.com/sdogruyol/gcry.git
+    version: 0.36.0
+

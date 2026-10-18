@@ -1,3 +1,7 @@
+{% if flag?(:gc_none) %}
+  require "gcry"
+{% end %}
+
 require "base64"
 require "cryyjson"
 require "json"
@@ -3186,8 +3190,7 @@ module Compress
         current_rank = 0
         prev_char = input[sa[0]]
 
-        n.times do |i|
-          idx = sa[i]
+        sa.each do |idx|
           if input[idx] != prev_char
             current_rank += 1
             prev_char = input[idx]
@@ -3344,10 +3347,8 @@ module Compress
       property is_leaf : Bool
       property left : HuffmanNode?
       property right : HuffmanNode?
-      property index : Int32
 
       def initialize(@frequency : Int32 = 0, @byte_val : UInt8 = 0, @is_leaf : Bool = true)
-        @index = 0
       end
     end
 

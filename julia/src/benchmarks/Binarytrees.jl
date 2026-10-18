@@ -13,21 +13,21 @@ name(b::BinarytreesObj)::String = "Binarytrees::Obj"
 mutable struct TreeNodeObj
     left::Union{Nothing,TreeNodeObj}
     right::Union{Nothing,TreeNodeObj}
-    item::Int64
+    item::Int32
 
-    function TreeNodeObj(item::Int64, depth::Int64)
+    function TreeNodeObj(item::Int32, depth::Int32)
         node = new(nothing, nothing, item)
         if depth > 0
-            shift = 1 << (depth - 1)
-            node.left = TreeNodeObj(item - shift, depth - 1)
-            node.right = TreeNodeObj(item + shift, depth - 1)
+            shift = Int32(1) << (depth - Int32(1))
+            node.left = TreeNodeObj(item - shift, depth - Int32(1))
+            node.right = TreeNodeObj(item + shift, depth - Int32(1))
         end
         return node
     end
 end
 
-function sum(node::TreeNodeObj)::Int64
-    total = node.item + 1
+function sum(node::TreeNodeObj)::Int32
+    total = node.item + Int32(1)
 
     if node.left !== nothing
         total += sum(node.left)
@@ -39,22 +39,19 @@ function sum(node::TreeNodeObj)::Int64
 end
 
 function run(b::BinarytreesObj, iteration_id::Int64)
-    tree = TreeNodeObj(0, b.n)
-    b.result += Helper.to_u32(sum(tree))
-
+    tree = TreeNodeObj(Int32(0), Int32(b.n))
+    b.result += sum(tree)
 end
 
 checksum(b::BinarytreesObj)::UInt32 = b.result
 
-mutable struct TreeNodeArena
-    item::Int64
-    left::Int64
-    right::Int64
-
-    function TreeNodeArena(item::Int64)
-        return new(item, -1, -1)
-    end
+struct TreeNodeArena
+    item::Int32
+    left::Int32
+    right::Int32
 end
+
+TreeNodeArena(item::Int32) = TreeNodeArena(item, Int32(-1), Int32(-1))
 
 mutable struct BinarytreesArena <: AbstractBenchmark
     n::Int64
@@ -68,40 +65,39 @@ end
 
 name(b::BinarytreesArena)::String = "Binarytrees::Arena"
 
-function build!(nodes::Vector{TreeNodeArena}, item::Int64, depth::Int64)::Int64
-    idx = length(nodes) + 1
-    node = TreeNodeArena(item)
-    push!(nodes, node)
+function build!(nodes::Vector{TreeNodeArena}, item::Int32, depth::Int32)::Int32
+    idx = Int32(length(nodes) + 1)
+    push!(nodes, TreeNodeArena(item))
 
     if depth > 0
-        shift = 1 << (depth - 1)
-        node.left = build!(nodes, item - shift, depth - 1)
-        node.right = build!(nodes, item + shift, depth - 1)
+        shift = Int32(1) << (depth - Int32(1))
+        left_idx = build!(nodes, item - shift, depth - Int32(1))
+        right_idx = build!(nodes, item + shift, depth - Int32(1))
+
+        nodes[Int(idx)] = TreeNodeArena(item, left_idx, right_idx)
     end
 
     return idx
 end
 
-function sum(nodes::Vector{TreeNodeArena}, idx::Int64)::Int64
+function tree_sum(nodes::Vector{TreeNodeArena}, idx::Int32)::Int32
     node = nodes[idx]
-    total = node.item + 1
+    total = node.item + Int32(1)
 
     if node.left >= 1
-        total += sum(nodes, node.left)
+        total += tree_sum(nodes, node.left)
     end
     if node.right >= 1
-        total += sum(nodes, node.right)
+        total += tree_sum(nodes, node.right)
     end
 
     return total
 end
 
 function run(b::BinarytreesArena, iteration_id::Int64)
-
     nodes = TreeNodeArena[]
-    root_idx = build!(nodes, 0, b.n)
-    b.result += Helper.to_u32(sum(nodes, root_idx))
-
+    root_idx = build!(nodes, Int32(0), Int32(b.n))
+    b.result += tree_sum(nodes, root_idx)
 end
 
 checksum(b::BinarytreesArena)::UInt32 = b.result

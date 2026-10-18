@@ -1,5 +1,7 @@
 FROM langarena:base_clang
 
+ENV LC_ALL=C.UTF-8
+
 ARG version
 RUN git clone https://github.com/matz/spinel.git \
 	&& cd spinel && git reset --hard $version \

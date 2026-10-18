@@ -3,13 +3,13 @@ package main
 type TreeNodeObj struct {
 	left  *TreeNodeObj
 	right *TreeNodeObj
-	item  int
+	item  int32
 }
 
-func NewTreeNodeObj(item, depth int) *TreeNodeObj {
+func NewTreeNodeObj(item int32, depth int) *TreeNodeObj {
 	node := &TreeNodeObj{item: item}
 	if depth > 0 {
-		shift := 1 << (depth - 1)
+		shift := int32(1 << (depth - 1))
 		node.left = NewTreeNodeObj(item-shift, depth-1)
 		node.right = NewTreeNodeObj(item+shift, depth-1)
 	}
@@ -49,27 +49,21 @@ func (b *BinarytreesObj) Checksum() uint32 {
 }
 
 type TreeNodeArena struct {
-	item  int
-	left  int
-	right int
+	item  int32
+	left  int32
+	right int32
 }
 
 type TreeArena struct {
 	nodes []TreeNodeArena
 }
 
-func NewTreeArena() *TreeArena {
-	return &TreeArena{
-		nodes: make([]TreeNodeArena, 0),
-	}
-}
-
-func (a *TreeArena) Build(item, depth int) int {
-	idx := len(a.nodes)
+func (a *TreeArena) Build(item, depth int32) int32 {
+	idx := int32(len(a.nodes))
 	a.nodes = append(a.nodes, TreeNodeArena{item: item, left: -1, right: -1})
 
 	if depth > 0 {
-		shift := 1 << (depth - 1)
+		shift := int32(1) << (depth - 1)
 		leftIdx := a.Build(item-shift, depth-1)
 		rightIdx := a.Build(item+shift, depth-1)
 		node := &a.nodes[idx]
@@ -80,8 +74,8 @@ func (a *TreeArena) Build(item, depth int) int {
 	return idx
 }
 
-func (a *TreeArena) Sum(idx int) uint32 {
-	node := a.nodes[idx]
+func (a *TreeArena) Sum(idx int32) uint32 {
+	node := &a.nodes[idx]
 	total := uint32(node.item) + 1
 
 	if node.left >= 0 {
@@ -98,17 +92,19 @@ type BinarytreesArena struct {
 	BaseBenchmark
 	n      int64
 	result uint32
+	arena  TreeArena
 }
 
 func (b *BinarytreesArena) Prepare() {
 	b.n = b.ConfigVal("depth")
 	b.result = 0
+	b.arena.nodes = make([]TreeNodeArena, 0)
 }
 
 func (b *BinarytreesArena) Run(iteration_id int) {
-	arena := NewTreeArena()
-	rootIdx := arena.Build(0, int(b.n))
-	b.result += arena.Sum(rootIdx)
+	b.arena.nodes = b.arena.nodes[:0]
+	rootIdx := b.arena.Build(0, int32(b.n))
+	b.result += b.arena.Sum(rootIdx)
 }
 
 func (b *BinarytreesArena) Checksum() uint32 {

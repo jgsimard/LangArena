@@ -37,23 +37,23 @@ struct MatmulSingle(Benchmark, Movable):
     @staticmethod
     def _matgen(n: Int) -> List[List[Float64]]:
         var tmp = 1.0 / Float64(n) / Float64(n)
-        var a = List[List[Float64]]()
+        var a = List[List[Float64]](capacity=n)
 
         for i in range(n):
-            var row = List[Float64]()
+            var row = List[Float64](unsafe_uninit_length=n)
             for j in range(n):
-                row.append(tmp * Float64(i - j) * Float64(i + j))
+                row[j] = tmp * Float64(i - j) * Float64(i + j)
             a.append(row^)
 
         return a^
 
     @staticmethod
     def _transpose(b: List[List[Float64]], n: Int) -> List[List[Float64]]:
-        var b_t = List[List[Float64]]()
+        var b_t = List[List[Float64]](capacity=n)
         for j in range(n):
-            var row = List[Float64]()
+            var row = List[Float64](unsafe_uninit_length=n)
             for i in range(n):
-                row.append(b[i][j])
+                row[i] = b[i][j]
             b_t.append(row^)
         return b_t^
 
@@ -62,10 +62,10 @@ struct MatmulSingle(Benchmark, Movable):
         a: List[List[Float64]], b: List[List[Float64]], n: Int
     ) -> List[List[Float64]]:
         var b_t = MatmulSingle._transpose(b, n)
-        var c = List[List[Float64]]()
+        var c = List[List[Float64]](capacity=n)
 
         for i in range(n):
-            var row = List[Float64]()
+            var row = List[Float64](unsafe_uninit_length=n)
             ref ai = a[i]
 
             for j in range(n):
@@ -75,7 +75,7 @@ struct MatmulSingle(Benchmark, Movable):
                 for k in range(n):
                     s += ai[k] * b_tj[k]
 
-                row.append(s)
+                row[j] = s
 
             c.append(row^)
 
@@ -124,10 +124,10 @@ struct MatmulParallel(Benchmark, Movable):
         a: List[List[Float64]], b: List[List[Float64]], n: Int, num_threads: Int
     ) -> List[List[Float64]]:
         var b_t = MatmulSingle._transpose(b, n)
-        var c = List[List[Float64]]()
+        var c = List[List[Float64]](capacity=n)
 
         for _ in range(n):
-            var row = List[Float64](length=n, fill=0.0)
+            var row = List[Float64](unsafe_uninit_length=n)
             c.append(row^)
 
         var rows_per_worker = (n + num_threads - 1) // num_threads

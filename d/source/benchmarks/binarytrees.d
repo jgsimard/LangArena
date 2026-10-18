@@ -79,10 +79,6 @@ private:
     {
         TreeNode[] nodes;
 
-        this()
-        {
-        }
-
         int build(int item, int depth)
         {
             int idx = cast(int) nodes.length;
@@ -103,7 +99,7 @@ private:
 
         uint sum(int idx) const
         {
-            auto node = nodes[idx];
+            const ref node = nodes[idx];
             uint total = cast(uint) node.item + 1;
 
             if (node.left >= 0)

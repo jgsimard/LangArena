@@ -13,7 +13,7 @@ struct TreeNodeObj
 
 fn TreeNodeObj* tree_node_new(int item, int depth)
 {
-	TreeNodeObj* node = mem::new(TreeNodeObj);
+	TreeNodeObj* node = mem::tnew(TreeNodeObj);
 	node.item = item;
 	node.left = null;
 	node.right = null;
@@ -26,14 +26,6 @@ fn TreeNodeObj* tree_node_new(int item, int depth)
 	}
 
 	return node;
-}
-
-fn void tree_node_free(TreeNodeObj* node)
-{
-	if (!node) return;
-	tree_node_free(node.left);
-	tree_node_free(node.right);
-	mem::free(node);
 }
 
 fn uint tree_node_sum(TreeNodeObj* node)
@@ -61,9 +53,11 @@ fn void binarytrees_obj_run(Benchmark* self, int iteration_id)
 {
 	BinarytreesObjData* data = (BinarytreesObjData*)self.data;
 
-	TreeNodeObj* root = tree_node_new(0, (int)data.n);
-	data.result_val += tree_node_sum(root);
-	tree_node_free(root);
+	@pool()
+	{
+		TreeNodeObj* root = tree_node_new(0, (int)data.n);
+		data.result_val += tree_node_sum(root);
+	};
 }
 
 fn uint binarytrees_obj_checksum(Benchmark* self)

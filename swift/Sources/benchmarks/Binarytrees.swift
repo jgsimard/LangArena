@@ -9,16 +9,16 @@ final class BinarytreesObj: BenchmarkProtocol {
   }
 
   final class TreeNode {
-    let item: Int
+    let item: Int32
     let left: TreeNode?
     let right: TreeNode?
 
-    init(item: Int, depth: Int) {
+    init(item: Int32, depth: Int) {
       self.item = item
       if depth > 0 {
         let shift = 1 << (depth - 1)
-        left = TreeNode(item: item - shift, depth: depth - 1)
-        right = TreeNode(item: item + shift, depth: depth - 1)
+        left = TreeNode(item: item - Int32(shift), depth: depth - 1)
+        right = TreeNode(item: item + Int32(shift), depth: depth - 1)
       } else {
         left = nil
         right = nil

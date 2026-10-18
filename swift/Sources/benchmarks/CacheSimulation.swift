@@ -22,6 +22,7 @@ final class CacheSimulation: BenchmarkProtocol {
 
     init(capacity: Int) {
       self.capacity = capacity
+      cache.reserveCapacity(capacity)
     }
 
     func get(_ key: String) -> String? {
@@ -100,9 +101,19 @@ final class CacheSimulation: BenchmarkProtocol {
   private var resultVal: UInt32 = 5432
   private var valuesSize: Int = 0
   private var cacheSize: Int = 0
-  private var cache: FastLRUCache!
-  private var hits = 0
-  private var misses = 0
+  private var cache: FastLRUCache
+  private var hits: UInt32 = 0
+  private var misses: UInt32 = 0
+
+  init() {
+    self.valuesSize = 0
+    self.cacheSize = 0
+    self.cache = FastLRUCache(capacity: 0)
+
+    self.valuesSize = Int(configValue("values") ?? 0)
+    self.cacheSize = Int(configValue("size") ?? 0)
+    self.cache = FastLRUCache(capacity: self.cacheSize)
+  }
 
   func prepare() {
     valuesSize = Int(configValue("values") ?? 0)
@@ -115,16 +126,15 @@ final class CacheSimulation: BenchmarkProtocol {
   func run(iterationId: Int) {
     var j = 0
     while j < 1000 {
-      let key = String(format: "item_%d", Helper.nextInt(max: valuesSize))
+
+      let key = "item_\(Helper.nextInt(max: valuesSize))"
 
       if cache.get(key) != nil {
-        hits += 1
-        let value = String(format: "updated_%d", iterationId)
-        cache.put(key, value)
+        hits &+= 1
+        cache.put(key, "updated_\(iterationId)")
       } else {
-        misses += 1
-        let value = String(format: "new_%d", iterationId)
-        cache.put(key, value)
+        misses &+= 1
+        cache.put(key, "new_\(iterationId)")
       }
       j += 1
     }
@@ -132,9 +142,9 @@ final class CacheSimulation: BenchmarkProtocol {
 
   var checksum: UInt32 {
     var finalResult = resultVal
-    finalResult = (finalResult << 5) &+ UInt32(hits)
-    finalResult = (finalResult << 5) &+ UInt32(misses)
-    finalResult = (finalResult << 5) &+ UInt32(cache.size)
+    finalResult = (finalResult << 5) &+ hits
+    finalResult = (finalResult << 5) &+ misses
+    finalResult = (finalResult << 5) &+ UInt32(truncatingIfNeeded: cache.size)
     return finalResult
   }
 

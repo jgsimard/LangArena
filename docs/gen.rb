@@ -1032,6 +1032,7 @@ DESC
       'compile_by_lang': compile_by_lang,
 
       'hacking': hacking,
+      'hacking_mem': hacking('mem-mb'),
       'hacking_data_runtime': hacking_data('runtime'),
       'hacking_data_rtscore': hacking_data_rtscore,
       'hacking_data_memory': hacking_data('mem-mb'),
