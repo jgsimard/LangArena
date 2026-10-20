@@ -75,6 +75,7 @@ LANG_MASKS = {
   'php' => ['./php', ['.php'], []],
   'mojo' => ['./mojo', ['.mojo'], ['.pixi', 'target']],
   'gossamer' => ['./gossamer', ['.gos'], ['target', '.gos-cache']],
+  'goose' => ['./goose', ['.goose'], ['target']],
   'javascript' => ['./javascript', ['.js'], []],
 }
 
@@ -585,6 +586,80 @@ RUNS = [
     container: "gcc_cpp",
     group: :hack,
     deps_cmd: "make deps",
+  ),
+
+  # ======================================= Goose ======================================================
+
+  Run.new(
+    name: "Goose/Clang",
+    build_cmd: "make prod",
+    binary_name: "./target/benchmark",
+    run_cmd: "./target/benchmark",
+    version_cmd: "git -C /opt/goose log -1 --format=\"goose %h %cs, $(cc --version | head -n 1)\"",
+    dir: "/src/goose",
+    container: "goose_clang",
+    group: :prod,
+    deps_cmd: "mkdir -p target",
+  ),
+
+  Run.new(
+    name: "Goose/Clang/Fast",
+    build_cmd: "make fast",
+    binary_name: "./target/fast",
+    run_cmd: "./target/fast",
+    version_cmd: "git -C /opt/goose log -1 --format=\"goose %h %cs, $(cc --version | head -n 1)\"",
+    dir: "/src/goose",
+    container: "goose_clang",
+    group: :hack,
+    deps_cmd: "mkdir -p target",
+  ),
+  
+  Run.new(
+    name: "Goose/Clang/Middle",
+    build_cmd: "make middle",
+    binary_name: "./target/middle",
+    run_cmd: "./target/middle",
+    version_cmd: "git -C /opt/goose log -1 --format=\"goose %h %cs, $(cc --version | head -n 1)\"",
+    dir: "/src/goose",
+    container: "goose_clang",
+    group: :hack,
+    deps_cmd: "mkdir -p target",
+  ),
+  
+  Run.new(
+    name: "Goose/GCC",
+    build_cmd: "make prod",
+    binary_name: "./target/benchmark",
+    run_cmd: "./target/benchmark",
+    version_cmd: "git -C /opt/goose log -1 --format=\"goose %h %cs, $(cc --version | head -n 1)\"",
+    dir: "/src/goose",
+    container: "goose_gcc",
+    group: :hack,
+    deps_cmd: "mkdir -p target",
+  ),
+
+  Run.new(
+    name: "Goose/GCC/Fast",
+    build_cmd: "make fast",
+    binary_name: "./target/fast",
+    run_cmd: "./target/fast",
+    version_cmd: "git -C /opt/goose log -1 --format=\"goose %h %cs, $(cc --version | head -n 1)\"",
+    dir: "/src/goose",
+    container: "goose_gcc",
+    group: :hack,
+    deps_cmd: "mkdir -p target",
+  ),
+
+  Run.new(
+    name: "Goose/GCC/Middle",
+    build_cmd: "make middle",
+    binary_name: "./target/middle",
+    run_cmd: "./target/middle",
+    version_cmd: "git -C /opt/goose log -1 --format=\"goose %h %cs, $(cc --version | head -n 1)\"",
+    dir: "/src/goose",
+    container: "goose_gcc",
+    group: :hack,
+    deps_cmd: "mkdir -p target",
   ),
 
   # ======================================= Rust ======================================================

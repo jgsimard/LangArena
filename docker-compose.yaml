@@ -616,6 +616,36 @@ services:
     depends_on:
       - rust
 
+  goose_clang:
+    <<: *shared
+    image: langarena:goose_clang
+    working_dir: /src/goose
+    build:
+      dockerfile: docker/goose_clang
+      args:
+        # https://github.com/aardappel/goose/commits/master
+        version: "ea1f368c109c083a2161580ff1d74c70200b6cc8"
+    volumes:
+      - .:/src
+      - ./cache/build/goose_clang/target:/src/goose/target
+    depends_on:
+      - base_clang
+
+  goose_gcc:
+    <<: *shared
+    image: langarena:goose_gcc
+    working_dir: /src/goose
+    build:
+      dockerfile: docker/goose_gcc
+      args:
+        # https://github.com/aardappel/goose/commits/master
+        version: "ea1f368c109c083a2161580ff1d74c70200b6cc8"
+    volumes:
+      - .:/src
+      - ./cache/build/goose_gcc/target:/src/goose/target
+    depends_on:
+      - base_gcc
+
   julia:
     <<: *shared
     image: langarena:julia
