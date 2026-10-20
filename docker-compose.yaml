@@ -602,7 +602,7 @@ services:
       dockerfile: docker/goose
       args:
         # https://github.com/aardappel/goose/commits/master
-        version: "f6d31d0ef402dcbdc439d9abe50cebe37e5edd93"
+        version: "ea1f368c109c083a2161580ff1d74c70200b6cc8"
     volumes:
       - .:/src
       - ./cache/build/goose/target:/src/goose/target

@@ -105,9 +105,12 @@ fn dispatch(b: Bench&) -> u32, bool {
         return execute(b, s, neural_net::prepare, neural_net::run, neural_net::checksum), true;
     }
     if n == "Etc::CacheSimulation" {
-        var map = dictionary<u8[..16], cache_simulation::Node?> {};
+
+        reusable[] var strings: u8[>..] = [];
+        var map = dictionary<u8[:], cache_simulation::Node?> {};
         var s = cache_simulation::new_cache_simulation(map);
-        return execute(b, s, cache_simulation::prepare, cache_simulation::run, cache_simulation::checksum), true;
+        fn run(sim, iteration_id) { cache_simulation::run(sim, iteration_id, strings); }
+        return execute(b, s, cache_simulation::prepare, run, cache_simulation::checksum), true;
     }
     if n == "Etc::GameOfLife" {
         reusable[] var pool: game_of_life::Cell[>..] = [];
