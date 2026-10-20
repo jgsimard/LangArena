@@ -12,6 +12,7 @@ proc newTreeNodeObj(item: int32, depth: int): TreeNodeObj =
     result.left = newTreeNodeObj(int32(item - shift), depth - 1)
     result.right = newTreeNodeObj(int32(item + shift), depth - 1)
 
+{.push overflowChecks: off.}
 proc sum(self: TreeNodeObj): int32 =
   var total = self.item + 1
   if not self.left.isNil:
@@ -19,6 +20,7 @@ proc sum(self: TreeNodeObj): int32 =
   if not self.right.isNil:
     total += self.right.sum()
   return total
+{.pop.}
 
 type
   BinarytreesObj* = ref object of Benchmark
@@ -65,6 +67,7 @@ proc build(self: var TreeArena, item: int32, depth: int32): int32 =
 
   return idx
 
+{.push overflowChecks: off.}
 proc sum(self: TreeArena, idx: int32): int32 =
   let node = self.nodes[idx]
   var total = node.item + 1
@@ -75,6 +78,7 @@ proc sum(self: TreeArena, idx: int32): int32 =
     total += self.sum(node.right)
 
   return total
+{.pop.}
 
 type
   BinarytreesArena* = ref object of Benchmark
