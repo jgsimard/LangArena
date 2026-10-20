@@ -68,13 +68,9 @@ struct BinarytreesObj(Benchmark, Movable):
         if depth > 0:
             var shift = 1 << (depth - 1)
             var left_ptr = unsafe_alloc[TreeNodeObj](1)
-            left_ptr.unsafe_write(
-                Self.build_tree(item - shift, depth - 1)
-            )
+            left_ptr.unsafe_write(Self.build_tree(item - shift, depth - 1))
             var right_ptr = unsafe_alloc[TreeNodeObj](1)
-            right_ptr.unsafe_write(
-                Self.build_tree(item + shift, depth - 1)
-            )
+            right_ptr.unsafe_write(Self.build_tree(item + shift, depth - 1))
             return TreeNodeObj(item, left_ptr, right_ptr)
         return TreeNodeObj(item)
 
