@@ -21,8 +21,8 @@ pub const BinarytreesObj = struct {
                 .right = null,
             };
 
-            const shift: i32 = @as(i32, 1) << @intCast(depth - 1);
             if (depth > 0) {
+                const shift: i32 = @as(i32, 1) << @intCast(depth - 1);
                 node.left = try TreeNode.create(allocator, item - shift, depth - 1);
                 node.right = try TreeNode.create(allocator, item + shift, depth - 1);
             }
