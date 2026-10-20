@@ -1027,4 +1027,3 @@ impl Benchmark for LZWDecode {
         res
     }
 }
-
