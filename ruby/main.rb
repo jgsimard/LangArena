@@ -3277,7 +3277,7 @@ module Compress
         current_rank = 0
         prev_char = input[sa[0]]
 
-        sa.each_with_index do |idx, i|
+        sa.each do |idx|
           if input[idx] != prev_char
             current_rank += 1
             prev_char = input[idx]
@@ -3432,7 +3432,7 @@ module Compress
 
   class HuffEncode < Benchmark
     class HuffmanNode
-      attr_accessor :frequency, :byte_val, :is_leaf, :left, :right, :index
+      attr_accessor :frequency, :byte_val, :is_leaf, :left, :right
 
       def initialize(frequency = 0, byte_val = 0, is_leaf = true)
         @frequency = frequency
@@ -3440,7 +3440,6 @@ module Compress
         @is_leaf = is_leaf
         @left = nil
         @right = nil
-        @index = 0
       end
     end
 

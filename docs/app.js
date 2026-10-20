@@ -24,6 +24,7 @@ function changeTab(tabId, group_lang_option_checked = false, choose_lang = null)
         'analys_tab': 'AI Analysis',
         'critic_tab': 'AI Critic',
         'hacking_tab': 'Hacking',
+        'hacking_tab_mem': 'HackingMem',
         'prev_run_tab': 'Updates',
         'history_tab': 'History',
         'history_full_tab': 'Full History',
@@ -85,6 +86,9 @@ function changeTab(tabId, group_lang_option_checked = false, choose_lang = null)
             break;
         case 'hacking_tab':
             hacking_tab(choose_lang || 'c');            
+            break;
+        case 'hacking_tab_mem':
+            hacking_tab_mem(choose_lang || 'c');            
             break;
         case 'analys_tab':
             loadScriptOnDemand('ai_analysis.js', function() {
@@ -464,6 +468,7 @@ function lang_color(lang) {
         'mojo': '#FF4D00',
         'php': '#8892BF',
         'gossamer': '#38BDF8',
+        'goose': '#D6CFC7',
         'js': '#F7DF1E'
     };
 
@@ -546,6 +551,27 @@ function hacking_tab(select_lang = 'c') {
     $('.filters .filter-btn').removeClass('active');    
     $(`#filter_button_${select_lang}`).addClass('active');
     create_table($results, select_lang, window.Data.hacking[select_lang], 1);
+}
+
+function hacking_tab_mem(select_lang = 'c') {
+    const $results = $('#results');
+    $results.empty();
+    $filters = $('<div>', {class: 'filters'});
+    $filters.append('<span>Filter by language:</span>');
+
+    const keys = Object.keys(window.Data['history_full']);
+    for (const lang of keys) {
+        $filters.append(`
+            <button class="filter-btn" id="filter_button_${lang}" onclick="changeTab('hacking_tab_mem', false, '${lang}')" style="border-left-color: ${lang_color(lang)}; border-left-width: 3px;">
+                ${lang}
+            </button>        
+        `);
+    }
+
+    $results.append($filters);
+    $('.filters .filter-btn').removeClass('active');    
+    $(`#filter_button_${select_lang}`).addClass('active');
+    create_table($results, select_lang, window.Data.hacking_mem[select_lang], 1);
 }
 
 function history_tab(select_lang = 'c', key = 'history', tab = 'history_tab') {

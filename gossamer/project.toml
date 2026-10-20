@@ -1,7 +1,6 @@
 [project]
 id = "langarena.dev/gossamer"
 version = "0.1.0"
-gossamer-version = "^0.72.0"
 entry = "src/main.gos"
 
 [dependencies]

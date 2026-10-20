@@ -13,24 +13,14 @@ struct CoordinatesData: Codable {
 final class JsonParseMapping: BenchmarkProtocol {
   private var text: String = ""
   private var resultVal: UInt32 = 0
-
-  init() {
-
-  }
+  private let decoder = JSONDecoder()
 
   func prepare() {
     let generator = JsonGenerate()
     generator.n = configValue("coords") ?? 0
     generator.prepare()
     generator.run(iterationId: 0)
-
-    let mirror = Mirror(reflecting: generator)
-    for child in mirror.children {
-      if child.label == "text" {
-        text = child.value as? String ?? ""
-        break
-      }
-    }
+    text = generator.getResult()
   }
 
   private func calcMapping() -> (Double, Double, Double) {
@@ -39,7 +29,7 @@ final class JsonParseMapping: BenchmarkProtocol {
     }
 
     do {
-      let decoded = try JSONDecoder().decode(CoordinatesData.self, from: data)
+      let decoded = try decoder.decode(CoordinatesData.self, from: data)
       let coordinates = decoded.coordinates
       let count = Double(coordinates.count)
 

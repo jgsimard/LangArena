@@ -1,103 +1,87 @@
 import Foundation
 
-enum MixedValue: Codable {
-  case int(Int)
-  case bool(Bool)
+enum OptsTuple: Codable {
+  case tuple(Int, Bool)
 
   init(from decoder: Decoder) throws {
-    let container = try decoder.singleValueContainer()
-    if let int = try? container.decode(Int.self) {
-      self = .int(int)
-    } else if let bool = try? container.decode(Bool.self) {
-      self = .bool(bool)
-    } else {
-      throw DecodingError.typeMismatch(
-        MixedValue.self,
-        DecodingError.Context(
-          codingPath: decoder.codingPath,
-          debugDescription: "Expected Int or Bool"
-        )
-      )
-    }
+    var c = try decoder.unkeyedContainer()
+    let i = try c.decode(Int.self)
+    let b = try c.decode(Bool.self)
+    self = .tuple(i, b)
   }
 
   func encode(to encoder: Encoder) throws {
-    var container = encoder.singleValueContainer()
+    var c = encoder.unkeyedContainer()
     switch self {
-    case .int(let value): try container.encode(value)
-    case .bool(let value): try container.encode(value)
+    case .tuple(let i, let b):
+      try c.encode(i)
+      try c.encode(b)
     }
   }
 }
 
-struct JsonGenerateCoordinate: Codable {
+struct JsonCoordinate: Codable {
   let x: Double
   let y: Double
   let z: Double
   let name: String
-  let opts: [String: [MixedValue]]
-
-  init(x: Float, y: Float, z: Float, name: String) {
-    self.x = Double(x)
-    self.y = Double(y)
-    self.z = Double(z)
-    self.name = name
-    self.opts = ["1": [.int(1), .bool(true)]]
-  }
+  let opts: [String: OptsTuple]
 }
 
-struct JsonGenerateData: Codable {
-  let coordinates: [JsonGenerateCoordinate]
+struct JsonData: Codable {
+  let coordinates: [JsonCoordinate]
   let info: String
 }
 
 final class JsonGenerate: BenchmarkProtocol {
   public var n: Int64 = 0
-  private var data: [[String: Any]] = []
+  private var data: JsonData
   private var text: String = ""
   private var resultVal: UInt32 = 0
 
   init() {
-    n = configValue("coords") ?? 0
-    data.reserveCapacity(Int(n))
+
+    self.data = JsonData(coordinates: [], info: "some info")
+    self.n = configValue("coords") ?? 0
   }
 
-  private func customRound(_ value: Double, _ decimals: Int) -> Double {
-    let factor = pow(10.0, Double(decimals))
-    return round(value * factor) / factor
+  private func roundTo8(_ value: Double) -> Double {
+    (value * 100_000_000.0).rounded() / 100_000_000.0
   }
 
   func prepare() {
-    data.removeAll()
+    var coords: [JsonCoordinate] = []
+    coords.reserveCapacity(Int(n))
+
     for _ in 0..<Int(n) {
-      let x = customRound(Double(Helper.nextFloat()), 8)
-      let y = customRound(Double(Helper.nextFloat()), 8)
-      let z = customRound(Double(Helper.nextFloat()), 8)
+      let x = roundTo8(Double(Helper.nextFloat()))
+      let y = roundTo8(Double(Helper.nextFloat()))
+      let z = roundTo8(Double(Helper.nextFloat()))
       let name =
         String(format: "%.7f", Helper.nextFloat()) + " " + String(Helper.nextInt(max: 10000))
 
-      data.append([
-        "x": x,
-        "y": y,
-        "z": z,
-        "name": name,
-        "opts": ["1": [1, true]],
-      ])
+      coords.append(
+        JsonCoordinate(
+          x: x,
+          y: y,
+          z: z,
+          name: name,
+          opts: ["1": .tuple(1, true)]
+        ))
     }
+
+    data = JsonData(coordinates: coords, info: "some info")
   }
 
   func run(iterationId: Int) {
-    let jsonObject: [String: Any] = [
-      "info": "some info",
-      "coordinates": data,
-    ]
-
-    if let jsonData = try? JSONSerialization.data(withJSONObject: jsonObject, options: []),
+    let encoder = JSONEncoder()
+    if let jsonData = try? encoder.encode(data),
       let jsonString = String(data: jsonData, encoding: .utf8)
     {
       text = jsonString
+
       if text.hasPrefix("{\"") {
-        resultVal += 1
+        resultVal &+= 1
       }
     }
   }
@@ -108,5 +92,9 @@ final class JsonGenerate: BenchmarkProtocol {
 
   func name() -> String {
     return "Json::Generate"
+  }
+
+  func getResult() -> String {
+    return text
   }
 }

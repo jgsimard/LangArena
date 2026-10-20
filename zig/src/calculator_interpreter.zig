@@ -129,13 +129,9 @@ pub const CalculatorInterpreter = struct {
             return;
         };
 
-        _ = self.arena.reset(.retain_capacity);
-        self.expressions.clearRetainingCapacity();
-
         const arena_allocator = self.arena.allocator();
         var parser = shared.Parser.init(arena_allocator, self.program);
         defer parser.deinit();
-
         parser.parse(&self.expressions) catch {
             return;
         };

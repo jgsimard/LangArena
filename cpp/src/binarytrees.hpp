@@ -10,9 +10,9 @@ private:
   struct TreeNode {
     std::unique_ptr<TreeNode> left;
     std::unique_ptr<TreeNode> right;
-    int item;
+    int32_t item;
 
-    TreeNode(int item, int depth = 0);
+    TreeNode(int32_t item, int depth = 0);
 
     uint32_t sum() const {
       uint32_t total = static_cast<uint32_t>(item) + 1;

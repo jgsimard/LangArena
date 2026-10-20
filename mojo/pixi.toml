@@ -9,5 +9,5 @@ preview = ["pixi-build"]
 [tasks]
 
 [dependencies]
-mojo = "=1.1.0"
+mojo = "=1.2.0.dev2026101805"
 max = ">=0" 

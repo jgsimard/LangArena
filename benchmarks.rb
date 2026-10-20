@@ -75,6 +75,7 @@ LANG_MASKS = {
   'php' => ['./php', ['.php'], []],
   'mojo' => ['./mojo', ['.mojo'], ['.pixi', 'target']],
   'gossamer' => ['./gossamer', ['.gos'], ['target', '.gos-cache']],
+  'goose' => ['./goose', ['.goose'], ['target']],
   'javascript' => ['./javascript', ['.js'], []],
 }
 
@@ -247,7 +248,7 @@ class Run
   end
 
   def version
-    s, _, _ = execute_cmd("#{dcr} #{@version_cmd}")
+    s, _, _ = execute_cmd("#{dcr} sh -c '#{@version_cmd}'")
     v = s.strip
     v.gsub("\n", " | ")
   end
@@ -587,6 +588,80 @@ RUNS = [
     deps_cmd: "make deps",
   ),
 
+  # ======================================= Goose ======================================================
+
+  Run.new(
+    name: "Goose/Clang",
+    build_cmd: "make prod",
+    binary_name: "./target/benchmark",
+    run_cmd: "./target/benchmark",
+    version_cmd: "git -C /opt/goose log -1 --format=\"goose %h %cs, $(cc --version | head -n 1)\"",
+    dir: "/src/goose",
+    container: "goose_clang",
+    group: :prod,
+    deps_cmd: "mkdir -p target",
+  ),
+
+  Run.new(
+    name: "Goose/Clang/Fast",
+    build_cmd: "make fast",
+    binary_name: "./target/fast",
+    run_cmd: "./target/fast",
+    version_cmd: "git -C /opt/goose log -1 --format=\"goose %h %cs, $(cc --version | head -n 1)\"",
+    dir: "/src/goose",
+    container: "goose_clang",
+    group: :hack,
+    deps_cmd: "mkdir -p target",
+  ),
+  
+  Run.new(
+    name: "Goose/Clang/Middle",
+    build_cmd: "make middle",
+    binary_name: "./target/middle",
+    run_cmd: "./target/middle",
+    version_cmd: "git -C /opt/goose log -1 --format=\"goose %h %cs, $(cc --version | head -n 1)\"",
+    dir: "/src/goose",
+    container: "goose_clang",
+    group: :hack,
+    deps_cmd: "mkdir -p target",
+  ),
+  
+  Run.new(
+    name: "Goose/GCC",
+    build_cmd: "make prod",
+    binary_name: "./target/benchmark",
+    run_cmd: "./target/benchmark",
+    version_cmd: "git -C /opt/goose log -1 --format=\"goose %h %cs, $(cc --version | head -n 1)\"",
+    dir: "/src/goose",
+    container: "goose_gcc",
+    group: :hack,
+    deps_cmd: "mkdir -p target",
+  ),
+
+  Run.new(
+    name: "Goose/GCC/Fast",
+    build_cmd: "make fast",
+    binary_name: "./target/fast",
+    run_cmd: "./target/fast",
+    version_cmd: "git -C /opt/goose log -1 --format=\"goose %h %cs, $(cc --version | head -n 1)\"",
+    dir: "/src/goose",
+    container: "goose_gcc",
+    group: :hack,
+    deps_cmd: "mkdir -p target",
+  ),
+
+  Run.new(
+    name: "Goose/GCC/Middle",
+    build_cmd: "make middle",
+    binary_name: "./target/middle",
+    run_cmd: "./target/middle",
+    version_cmd: "git -C /opt/goose log -1 --format=\"goose %h %cs, $(cc --version | head -n 1)\"",
+    dir: "/src/goose",
+    container: "goose_gcc",
+    group: :hack,
+    deps_cmd: "mkdir -p target",
+  ),
+
   # ======================================= Rust ======================================================
   Run.new(
     name: "Rust", 
@@ -640,7 +715,7 @@ RUNS = [
     build_cmd: "sh -c 'cargo build --target wasm32-wasip1 --release; wasm-opt -O3 target/wasm32-wasip1/release/benchmarks.wasm -o target/wasm32-wasip1/release/benchmarks-opt.wasm'", 
     binary_name: "target/wasm32-wasip1/release/benchmarks-opt.wasm", 
     run_cmd: "node node-wasi-runner.js", 
-    version_cmd: "/bin/bash -c 'echo \"Rust->WASM $(rustc --version  | head -n 1), Node $(node --version)\"'",
+    version_cmd: "echo \"Rust->WASM $(rustc --version  | head -n 1), Node $(node --version)\"",
     dir: "/src/rust",
     container: "rust_wasm",
     group: :prod,
@@ -652,7 +727,7 @@ RUNS = [
     build_cmd: "sh -c 'cargo build --target wasm32-wasip1 --release; wasm-opt -O3 target/wasm32-wasip1/release/benchmarks.wasm -o target/wasm32-wasip1/release/benchmarks-opt.wasm'", 
     binary_name: "target/wasm32-wasip1/release/benchmarks-opt.wasm", 
     run_cmd: "wasmtime run target/wasm32-wasip1/release/benchmarks-opt.wasm", 
-    version_cmd: "/bin/bash -c 'echo \"Rust->WASM $(rustc --version  | head -n 1), $(wasmtime --version)\"'",
+    version_cmd: "echo \"Rust->WASM $(rustc --version  | head -n 1), $(wasmtime --version)\"",
     dir: "/src/rust",
     container: "rust_wasm",
     group: :hack,
@@ -664,7 +739,7 @@ RUNS = [
     build_cmd: "sh -c 'cargo build --target wasm32-wasip1 --release; wasm-opt -O3 target/wasm32-wasip1/release/benchmarks.wasm -o target/wasm32-wasip1/release/benchmarks-opt.wasm'", 
     binary_name: "target/wasm32-wasip1/release/benchmarks-opt.wasm", 
     run_cmd: "wasmer run target/wasm32-wasip1/release/benchmarks-opt.wasm", 
-    version_cmd: "/bin/bash -c 'echo \"Rust->WASM $(rustc --version  | head -n 1), $(wasmer --version)\"'",
+    version_cmd: "echo \"Rust->WASM $(rustc --version  | head -n 1), $(wasmer --version)\"",
     dir: "/src/rust",
     container: "rust_wasm",
     group: :hack,
@@ -676,7 +751,7 @@ RUNS = [
     build_cmd: "sh -c 'cargo build --target wasm32-wasip1 --release; wasm-opt -O3 target/wasm32-wasip1/release/benchmarks.wasm -o target/wasm32-wasip1/release/benchmarks-opt.wasm; wasmedge compile target/wasm32-wasip1/release/benchmarks-opt.wasm target/wasm32-wasip1/release/benchmarks-opt-aot.wasm'", 
     binary_name: "target/wasm32-wasip1/release/benchmarks-opt-aot.wasm", 
     run_cmd: "wasmedge --run-mode=aot --dir=. target/wasm32-wasip1/release/benchmarks-opt-aot.wasm", 
-    version_cmd: "/bin/bash -c 'echo \"Rust->WASM $(rustc --version  | head -n 1), $(wasmedge --version | head -n 1)\"'",
+    version_cmd: "echo \"Rust->WASM $(rustc --version  | head -n 1), $(wasmedge --version | head -n 1)\"",
     dir: "/src/rust",
     container: "rust_wasm",
     group: :hack,
@@ -758,6 +833,18 @@ RUNS = [
     dir: "/src/crystal",
     container: "crystal",
     group: :prod,
+    deps_cmd: "mkdir -p target ; shards install",
+  ),
+
+  Run.new(
+    name: "Crystal/GCRY", 
+    build_cmd: "crystal build main.cr -Dgc_none --release -o ./target/bin_crystal_gcry", 
+    binary_name: "./target/bin_crystal_gcry", 
+    run_cmd: "./target/bin_crystal_gcry", 
+    version_cmd: "crystal --version | head -n 1",
+    dir: "/src/crystal",
+    container: "crystal",
+    group: :hack,
     deps_cmd: "mkdir -p target ; shards install",
   ),
 
@@ -1710,6 +1797,24 @@ RUNS = [
   ),
 
   Run.new(
+    name: "Java/OpenJDK/EA",
+    build_cmd: <<~CMD.chomp,
+      mvn compile package -Pjava-plain -q
+    CMD
+    binary_name: "./target/java-benchmarks-1.0-SNAPSHOT.jar",
+    run_cmd: <<~CMD.chomp,
+      java \
+        -Xmx2g \
+        -jar ./target/java-benchmarks-1.0-SNAPSHOT.jar
+    CMD
+    version_cmd: "java --version",
+    dir: "/src/java",
+    container: "java_ea",
+    group: :hack,
+    deps_cmd: "mvn dependency:resolve; mvn dependency:resolve-plugins",
+  ),
+
+  Run.new(
     name: "Java/OpenJDK/Serial",
     build_cmd: <<~CMD.chomp,
       mvn compile package -Pjava-plain -q
@@ -2065,7 +2170,7 @@ RUNS = [
     CMD
     binary_name: "/src/typescript/target/dist/index.js",
     run_cmd: "node --max-old-space-size=4096 /src/typescript/target/dist/index.js",
-    version_cmd: "/bin/bash -c 'echo \"TCS $(tsc --version), Node $(node --version)\"'",
+    version_cmd: "echo \"TCS $(tsc --version), Node $(node --version)\"",
     dir: "/src/typescript",
     container: "typescript",
     group: :prod,
@@ -2083,7 +2188,7 @@ RUNS = [
         --optimize-for-size \
         /src/typescript/target/dist/index.js
     CMD
-    version_cmd: "/bin/bash -c 'echo \"TCS $(tsc --version), Node $(node --version)\"'",
+    version_cmd: "echo \"TCS $(tsc --version), Node $(node --version)\"",
     dir: "/src/typescript",
     container: "typescript",
     group: :hack,
@@ -2170,7 +2275,7 @@ RUNS = [
     version_cmd: "deno --version",
     dir: "/src/typescript",
     container: "typescript-deno",
-    group: :prod,
+    group: :hack,
     deps_cmd: "deno cache --quiet src/index.ts",
   ),
 

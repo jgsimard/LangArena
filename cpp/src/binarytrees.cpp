@@ -1,6 +1,6 @@
 #include "binarytrees.hpp"
 
-BinarytreesObj::TreeNode::TreeNode(int item, int depth) : item(item) {
+BinarytreesObj::TreeNode::TreeNode(int32_t item, int depth) : item(item) {
   if (depth > 0) {
     left = std::make_unique<TreeNode>(item - (1 << (depth - 1)), depth - 1);
     right = std::make_unique<TreeNode>(item + (1 << (depth - 1)), depth - 1);

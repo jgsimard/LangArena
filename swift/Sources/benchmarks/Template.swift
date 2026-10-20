@@ -129,34 +129,39 @@ final class TemplateParse: BenchmarkProtocol {
   }
 
   func run(iterationId: Int) {
-    let chars = Array(text)
-    let len = chars.count
-    var result = ""
-    result.reserveCapacity(Int(Double(len) * 1.5))
+    let bytes = Array(text.utf8)
+    let len = bytes.count
+
+    var output = [UInt8]()
+    output.reserveCapacity(Int(Double(len) * 1.5))
 
     var i = 0
+    let openBrace = UInt8(ascii: "{")
+    let closeBrace = UInt8(ascii: "}")
+
     while i < len {
-      if i + 1 < len && chars[i] == "{" && chars[i + 1] == "{" {
+      if i + 1 < len && bytes[i] == openBrace && bytes[i + 1] == openBrace {
         var j = i + 2
-        while j + 1 < len && !(chars[j] == "}" && chars[j + 1] == "}") {
+        while j + 1 < len && !(bytes[j] == closeBrace && bytes[j + 1] == closeBrace) {
           j += 1
         }
 
         if j + 1 < len {
-          let key = String(chars[(i + 2)..<j]).trimmingCharacters(in: .whitespaces)
+          let key = String(decoding: bytes[(i + 2)..<j], as: UTF8.self)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
           if let value = vars[key] {
-            result.append(value)
+            output.append(contentsOf: value.utf8)
           }
           i = j + 2
           continue
         }
       }
 
-      result.append(chars[i])
+      output.append(bytes[i])
       i += 1
     }
 
-    rendered = result
+    rendered = String(decoding: output, as: UTF8.self)
     checksumVal &+= UInt32(rendered.utf8.count)
   }
 

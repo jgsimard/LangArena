@@ -433,13 +433,6 @@ class HuffDecode: BenchmarkProtocol {
     resultVal = 0
   }
 
-  func run(iterationId: Int) {
-    guard let encoded = encoded else { return }
-    let tree = HuffEncode.buildHuffmanTree(encoded.frequencies)
-    decoded = huffmanDecode(encoded.data, tree, encoded.bitCount)
-    resultVal &+= UInt32(decoded.count)
-  }
-
   var checksum: UInt32 {
     var res = resultVal
     if decoded == testData {
@@ -450,13 +443,12 @@ class HuffDecode: BenchmarkProtocol {
 
   func huffmanDecode(_ encoded: [UInt8], _ root: HuffmanNode, _ bitCount: Int) -> [UInt8] {
 
-    var result = [UInt8]()
-    result.reserveCapacity(bitCount)
+    var result = [UInt8](repeating: 0, count: bitCount)
+    var resultSize = 0
 
     var currentNode = root
     var bitsProcessed = 0
     var byteIndex = 0
-
     let rootNode = root
 
     while bitsProcessed < bitCount && byteIndex < encoded.count {
@@ -464,9 +456,7 @@ class HuffDecode: BenchmarkProtocol {
       byteIndex += 1
 
       var bitPos = 7
-
       while bitPos >= 0 && bitsProcessed < bitCount {
-
         let bitMask = (byteVal >> bitPos) & 1
         bitsProcessed += 1
 
@@ -477,14 +467,29 @@ class HuffDecode: BenchmarkProtocol {
         }
 
         if currentNode.isLeaf {
-          result.append(currentNode.byteVal)
+
+          if currentNode.byteVal != 0 {
+            result[resultSize] = currentNode.byteVal
+            resultSize += 1
+          }
           currentNode = rootNode
         }
         bitPos -= 1
       }
     }
 
+    if resultSize < result.count {
+      result.removeLast(result.count - resultSize)
+    }
     return result
+  }
+
+  func run(iterationId: Int) {
+    guard let encoded = encoded else { return }
+    let tree = HuffEncode.buildHuffmanTree(encoded.frequencies)
+    decoded = huffmanDecode(encoded.data, tree, encoded.bitCount)
+
+    resultVal &+= UInt32(truncatingIfNeeded: decoded.count)
   }
 }
 
