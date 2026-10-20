@@ -950,7 +950,7 @@ services:
       dockerfile: docker/spinel_clang
       args:
         # https://github.com/matz/spinel
-        version: "84c9652083a505cb90557356b98def8cabc3d72f"
+        version: "78f436e0640938845498d0a97b2c3517dbe3a6dd"
     volumes:
       - .:/src
       - ./cache/build/spinel_clang/target:/src/ruby/target
@@ -965,7 +965,7 @@ services:
   #     dockerfile: docker/spinel_gcc
   #     args:
   #       # https://github.com/matz/spinel
-  #       version: "84c9652083a505cb90557356b98def8cabc3d72f"
+  #       version: "78f436e0640938845498d0a97b2c3517dbe3a6dd"
   #     volumes:
   #     - .:/src
   #     - ./cache/build/spinel_gcc/target:/src/ruby/target
