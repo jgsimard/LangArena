@@ -46,7 +46,7 @@ Participating Compilers/Runtimes:
 * `PHP`: [PHP/JIT](https://www.php.net/)
 * `JavaScript`: [Node](https://nodejs.org/), [Bun](https://bun.sh/), [Deno](https://deno.com/)
 * `Gossamer`: [Gossamer](https://gossamer-lang.org)
-* `Goose`: [Goose](https://github.com/aardappel/goose) (compiles to C, built with Clang)
+* `Goose`: [Goose](https://github.com/aardappel/goose)
 
 ## Benchmarking Methodology
 

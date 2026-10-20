@@ -194,10 +194,6 @@ fn arith_decode(encoded: ArithEncodedResult&) -> u8[>..] {
         low = low + (range * (low_table[symbol] as u64) / (total as u64));
 
         loop {
-            if high >= 0x80000000 && low < 0x80000000 && (low < 0x40000000 || high >= 0xC0000000) {
-                break;
-            }
-
             if high < 0x80000000 {
             } else if low >= 0x80000000 {
                 value -= 0x80000000;
@@ -207,6 +203,8 @@ fn arith_decode(encoded: ArithEncodedResult&) -> u8[>..] {
                 value -= 0x40000000;
                 low -= 0x40000000;
                 high -= 0x40000000;
+            } else {
+                break;
             }
 
             low <<= 1;

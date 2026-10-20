@@ -468,7 +468,7 @@ function lang_color(lang) {
         'mojo': '#FF4D00',
         'php': '#8892BF',
         'gossamer': '#38BDF8',
-        'goose': '#F2A541',
+        'goose': '#D6CFC7',
         'js': '#F7DF1E'
     };
 

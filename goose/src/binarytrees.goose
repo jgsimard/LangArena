@@ -14,8 +14,8 @@ recursive fn new_tree_node(nodes: TreeNode[>..]&, item: i32, depth: i32) -> Tree
     return node;
 }
 
-recursive fn sum(node: TreeNode&) -> u32 {
-    var total = (node.item as! u32) + 1;
+recursive fn sum(node: TreeNode&) -> i32 {
+    var total = node.item + 1;
     let left = node.left;
     if left { total += left.sum(); }
     let right = node.right;
@@ -34,7 +34,7 @@ fn prepare(s: BinarytreesObj&) {}
 fn run(s: BinarytreesObj&, iteration_id: i64) {
     var nodes: TreeNode[>..] = [];
     let root .= new_tree_node(nodes, 0, s.n as i32);
-    s.result_val += root.sum();
+    s.result_val += root.sum() as u32;
 }
 
 fn checksum(s: BinarytreesObj&) -> u32 { s.result_val }
