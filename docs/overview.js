@@ -168,7 +168,7 @@ function overview_tab($results) {
 
 <p>The suite began with my original implementation in Crystal. The other languages were ported from it with LLM assistance. Each task has a checksum to validate implementation correctness and prevent DCE.</p>
 
-<p>The main table shows results for standard safe release flags. A separate "Hacking" section explores unsafe optimizations - disabling bounds checks, runtime checks, and other trade-offs that prioritize speed over safety.</p>
+<p>The main table shows results for standard safe release flags. A separate "Hacking" section explores unsafe flags - disabling bounds checks, runtime checks, and other trade-offs that prioritize speed over safety.</p>
 
 <p>Since this is a language-level evaluation, cross-language comparisons are rough and approximate. Comparing different runtimes or compilers for the same language, however, gives a fairer test - OpenJDK/GraalVM, Node/Bun/Deno, Clang/GCC, CRuby/Spinel, and others.</p>
 

@@ -304,9 +304,6 @@ Heatmap: greener = faster, redder = slower.
     m.sort_by! { |arr| -arr[-1] }
 
     left_header = m.map { |arr| arr[0] }
-    stars = _assign_stars(m.map { |arr| -arr[-1]})
-
-    m.each_with_index { |arr, index| arr.shift; arr.append(_star_str stars[index]) }
 
     desc = <<-DESC
 This table compares how concisely different programming languages express the same program.
@@ -314,13 +311,13 @@ This table compares how concisely different programming languages express the sa
 • <strong>Boilerplate</strong> = source / gzip — lower means less redundant code<br>
 • <strong>Boilerplate vs Avg</strong> = relative to average language (1.0 = average)<br>
 • <strong>Lines vs Avg</strong> = line count relative to average (1.0 = average)<br>
-• <strong>Expressiveness Score</strong> = overall conciseness - (Boilerplate vs Avg) × (Lines vs Avg)<sup>1.5</sup> — lower is better<br>
+• <strong>Expressiveness Score</strong> = (Boilerplate vs Avg) × (Lines vs Avg)<sup>1.5</sup> — lower is better<br>
 • <strong>Expressiveness vs Avg, %</strong> = how much better/worse than average language.<br>
 • <strong>Award stars</strong> = overall rating (5★ = most expressive, 1★ = most verbose)
 <br><br>
     DESC
 
-    {map: m, up_header: ["Size, kb", "Gzip Size, kb", "Lines Count", "Boilerplate", "Boilerplate vs Avg", "Lines vs Avg", "Expressiveness Score", "Expressiveness vs Avg, %", "Award"], left_header: left_header, lang: :left, description: desc, first_row: "Lang"}
+    {map: m, up_header: ["Size, kb", "Gzip Size, kb", "Lines Count", "Boilerplate", "Boilerplate vs Avg", "Lines vs Avg", "Expressiveness Score", "Expressiveness vs Avg, %"], left_header: left_header, lang: :left, description: desc, first_row: "Lang"}
   end
 
   def versions
@@ -1083,20 +1080,6 @@ DESC
       h2[lang] = min_runtime_key
     end
     h2
-  end
-
-  def _assign_stars(values)
-    sorted = values.sort
-    n = sorted.size
-
-    value_to_stars = {}
-    sorted.each_with_index do |val, idx|
-      group = (idx * 5 / n.to_f).floor
-      stars = 5 - group
-      value_to_stars[val] = stars unless value_to_stars[val]
-    end
-
-    values.map { |val| value_to_stars[val] }
   end
 
   def _star_str(n, all = 5)

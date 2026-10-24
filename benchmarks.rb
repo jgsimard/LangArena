@@ -614,17 +614,18 @@ RUNS = [
     deps_cmd: "mkdir -p target",
   ),
   
-  Run.new(
-    name: "Goose/Clang/Middle",
-    build_cmd: "make middle",
-    binary_name: "./target/middle",
-    run_cmd: "./target/middle",
-    version_cmd: "git -C /opt/goose log -1 --format=\"goose %h %cs, $(cc --version | head -n 1)\"",
-    dir: "/src/goose",
-    container: "goose_clang",
-    group: :hack,
-    deps_cmd: "mkdir -p target",
-  ),
+  # slow
+  # Run.new(
+  #   name: "Goose/Clang/Middle",
+  #   build_cmd: "make middle",
+  #   binary_name: "./target/middle",
+  #   run_cmd: "./target/middle",
+  #   version_cmd: "git -C /opt/goose log -1 --format=\"goose %h %cs, $(cc --version | head -n 1)\"",
+  #   dir: "/src/goose",
+  #   container: "goose_clang",
+  #   group: :hack,
+  #   deps_cmd: "mkdir -p target",
+  # ),
   
   Run.new(
     name: "Goose/GCC",
@@ -650,17 +651,18 @@ RUNS = [
     deps_cmd: "mkdir -p target",
   ),
 
-  Run.new(
-    name: "Goose/GCC/Middle",
-    build_cmd: "make middle",
-    binary_name: "./target/middle",
-    run_cmd: "./target/middle",
-    version_cmd: "git -C /opt/goose log -1 --format=\"goose %h %cs, $(cc --version | head -n 1)\"",
-    dir: "/src/goose",
-    container: "goose_gcc",
-    group: :hack,
-    deps_cmd: "mkdir -p target",
-  ),
+  # slow
+  # Run.new(
+  #   name: "Goose/GCC/Middle",
+  #   build_cmd: "make middle",
+  #   binary_name: "./target/middle",
+  #   run_cmd: "./target/middle",
+  #   version_cmd: "git -C /opt/goose log -1 --format=\"goose %h %cs, $(cc --version | head -n 1)\"",
+  #   dir: "/src/goose",
+  #   container: "goose_gcc",
+  #   group: :hack,
+  #   deps_cmd: "mkdir -p target",
+  # ),
 
   # ======================================= Rust ======================================================
   Run.new(

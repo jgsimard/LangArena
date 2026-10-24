@@ -60,9 +60,9 @@ recursive fn build_tree(s: BinarytreesArena&, item: i32, depth: i32) -> i32 {
     return idx;
 }
 
-recursive fn sum(s: BinarytreesArena&, idx: i32) -> u32 {
+recursive fn sum(s: BinarytreesArena&, idx: i32) -> i32 {
     let node = s.arena[idx];
-    var total = (node.item as! u32) + 1;
+    var total = node.item + 1;
     if node.left >= 0 { total += s.sum(node.left); }
     if node.right >= 0 { total += s.sum(node.right); }
     return total;
@@ -73,7 +73,7 @@ fn prepare(s: BinarytreesArena&) {}
 fn run(s: BinarytreesArena&, iteration_id: i64) {
     s.arena = [];
     s.build_tree(0, s.n as i32);
-    s.result_val += s.sum(0);
+    s.result_val += s.sum(0) as u32;
 }
 
 fn checksum(s: BinarytreesArena&) -> u32 { s.result_val }
