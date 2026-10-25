@@ -22,13 +22,13 @@ struct Sieve(Benchmark):
 
         var sqrt_limit = Int(sqrt(Float64(limit)))
 
-        for p in range(2, sqrt_limit + 1):
+        for p in range(3, sqrt_limit + 1, 2):
             if primes[p] == 1:
                 var start = p * p
                 var multiple = start
                 while multiple <= limit:
                     primes[multiple] = 0
-                    multiple += p
+                    multiple += 2 * p
 
         var last_prime: Int = 2
         var count: Int = 1
