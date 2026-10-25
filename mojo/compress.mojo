@@ -55,18 +55,18 @@ struct BWTEncode(Benchmark):
         if n == 0:
             return BWTResult()
 
-        var counts = List[Int](length=256, fill=0)
+        var counts = Array[Int, 256](fill=0)
         for i in range(n):
             counts[Int(input[i])] += 1
 
-        var positions = List[Int](length=256, fill=0)
+        var positions = Array[Int, 256](fill=0)
         var total = 0
         for i in range(256):
             positions[i] = total
             total += counts[i]
 
         var sa = List[Int](length=n, fill=0)
-        var temp_counts = List[Int](length=256, fill=0)
+        var temp_counts = Array[Int, 256](fill=0)
         for i in range(n):
             var byte = Int(input[i])
             var pos = positions[byte] + temp_counts[byte]
@@ -171,18 +171,18 @@ struct BWTDecode(Benchmark):
         if n == 0:
             return List[UInt8]()
 
-        var counts = List[Int](length=256, fill=0)
+        var counts = Array[Int, 256](fill=0)
         for i in range(n):
             counts[Int(bwt[i])] += 1
 
-        var positions = List[Int](length=256, fill=0)
+        var positions = Array[Int, 256](fill=0)
         var total = 0
         for i in range(256):
             positions[i] = total
             total += counts[i]
 
         var next_arr = List[Int](length=n, fill=0)
-        var temp_counts = List[Int](length=256, fill=0)
+        var temp_counts = Array[Int, 256](fill=0)
 
         for i in range(n):
             var byte = Int(bwt[i])
@@ -216,21 +216,21 @@ struct _HuffmanNode(Copyable, ImplicitlyCopyable):
 
 
 struct _HuffmanCodes(Copyable):
-    var code_lengths: List[Int]
-    var codes: List[Int]
+    var code_lengths: Array[Int, 256]
+    var codes: Array[Int, 256]
 
     def __init__(out self):
-        self.code_lengths = List[Int](length=256, fill=0)
-        self.codes = List[Int](length=256, fill=0)
+        self.code_lengths = Array[Int, 256](fill=0)
+        self.codes = Array[Int, 256](fill=0)
 
 
 struct _HuffEncodedResult(Copyable):
-    var frequencies: List[Int]
+    var frequencies: Array[Int, 256]
     var data: List[UInt8]
     var bit_count: Int
 
     def __init__(out self):
-        self.frequencies = List[Int]()
+        self.frequencies = Array[Int, 256](fill=0)
         self.data = List[UInt8]()
         self.bit_count = 0
 
@@ -238,7 +238,7 @@ struct _HuffEncodedResult(Copyable):
         out self,
         var data: List[UInt8],
         bit_count: Int,
-        var frequencies: List[Int],
+        var frequencies: Array[Int, 256],
     ):
         self.data = data^
         self.bit_count = bit_count
@@ -246,7 +246,7 @@ struct _HuffEncodedResult(Copyable):
 
 
 def _build_huffman_tree_nodes(
-    frequencies: List[Int],
+    frequencies: Array[Int, 256],
 ) -> Tuple[List[_HuffmanNode], Int]:
     var nodes = List[_HuffmanNode]()
     var heap = List[Int]()
@@ -322,7 +322,9 @@ def _build_huffman_codes(
 
 
 def _huffman_encode(
-    data: List[UInt8], codes: _HuffmanCodes, var frequencies: List[Int]
+    data: List[UInt8],
+    codes: _HuffmanCodes,
+    var frequencies: Array[Int, 256],
 ) -> _HuffEncodedResult:
     var result = List[UInt8]()
     var current_byte: UInt8 = 0
@@ -405,7 +407,7 @@ struct HuffEncode(Benchmark):
         self.test_data = generate_test_data(self.size)
 
     def run(mut self, iteration_id: Int, mut helper: Helper) raises:
-        var frequencies = List[Int](length=256, fill=0)
+        var frequencies = Array[Int, 256](fill=0)
         for i in range(len(self.test_data)):
             frequencies[Int(self.test_data[i])] += 1
 
@@ -443,7 +445,7 @@ struct HuffDecode(Benchmark):
     def prepare(mut self, mut helper: Helper) raises:
         self.test_data = generate_test_data(self.size)
 
-        var frequencies = List[Int](length=256, fill=0)
+        var frequencies = Array[Int, 256](fill=0)
         for i in range(len(self.test_data)):
             frequencies[Int(self.test_data[i])] += 1
 
@@ -483,15 +485,15 @@ struct HuffDecode(Benchmark):
 
 struct _ArithFreqTable(Copyable):
     var total: Int
-    var low: List[Int]
-    var high: List[Int]
+    var low: Array[Int, 256]
+    var high: Array[Int, 256]
 
-    def __init__(out self, frequencies: List[Int]):
+    def __init__(out self, frequencies: Array[Int, 256]):
         self.total = 0
         for i in range(256):
             self.total += frequencies[i]
-        self.low = List[Int](length=256, fill=0)
-        self.high = List[Int](length=256, fill=0)
+        self.low = Array[Int, 256](fill=0)
+        self.high = Array[Int, 256](fill=0)
 
         var cum = 0
         for i in range(256):
@@ -502,13 +504,15 @@ struct _ArithFreqTable(Copyable):
 
 struct _ArithEncodedResult(Copyable):
     var data: List[UInt8]
-    var frequencies: List[Int]
+    var frequencies: Array[Int, 256]
 
     def __init__(out self):
         self.data = List[UInt8]()
-        self.frequencies = List[Int]()
+        self.frequencies = Array[Int, 256](fill=0)
 
-    def __init__(out self, var data: List[UInt8], var frequencies: List[Int]):
+    def __init__(
+        out self, var data: List[UInt8], var frequencies: Array[Int, 256]
+    ):
         self.data = data^
         self.frequencies = frequencies^
 
@@ -544,14 +548,14 @@ struct _BitOutputStream(Movable):
         return result^
 
 
-struct _BitInputStream(Movable):
-    var bytes: List[UInt8]
+struct _BitInputStream[origin: Origin](Movable):
+    var bytes: Span[UInt8, Self.origin]
     var byte_pos: Int
     var bit_pos: Int
     var current_byte: UInt8
 
-    def __init__(out self, var bytes: List[UInt8]):
-        self.bytes = bytes^
+    def __init__(out self, bytes: Span[UInt8, Self.origin]):
+        self.bytes = bytes
         self.byte_pos = 0
         self.bit_pos = 0
         self.current_byte = 0
@@ -573,7 +577,7 @@ struct _BitInputStream(Movable):
 
 
 def _arith_encode_data(data: List[UInt8]) -> _ArithEncodedResult:
-    var frequencies = List[Int](length=256, fill=0)
+    var frequencies = Array[Int, 256](fill=0)
     for i in range(len(data)):
         frequencies[Int(data[i])] += 1
 
@@ -647,8 +651,7 @@ def _arith_decode_data(encoded: _ArithEncodedResult) -> List[UInt8]:
     var freq_table = _ArithFreqTable(frequencies)
 
     var result = List[UInt8](length=data_size, fill=0)
-    var data_copy = data.copy()
-    var input = _BitInputStream(data_copy^)
+    var input = _BitInputStream(Span(data))
 
     var value: UInt64 = 0
     for _ in range(32):

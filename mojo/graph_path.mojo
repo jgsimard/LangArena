@@ -82,7 +82,7 @@ struct GraphBFS(Benchmark):
             return 0
 
         var visited = List[Bool](length=graph.vertices, fill=False)
-        var queue = List[Tuple[Int, Int]]()
+        var queue = List[Tuple[Int, Int]](capacity=graph.vertices)
         queue.append((start, 0))
         visited[start] = True
 

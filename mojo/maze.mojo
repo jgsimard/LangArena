@@ -13,14 +13,14 @@ struct _MazeCell(Copyable):
     var kind: Int
     var x: Int
     var y: Int
-    var neighbors: List[Tuple[Int, Int]]
+    var neighbors: Array[Tuple[Int, Int], 4]
     var neighbor_count: Int
 
     def __init__(out self, x: Int, y: Int):
         self.kind = MAZE_WALL
         self.x = x
         self.y = y
-        self.neighbors = List[Tuple[Int, Int]](capacity=4)
+        self.neighbors = Array[Tuple[Int, Int], 4](fill=(0, 0))
         self.neighbor_count = 0
 
     def is_walkable(self) -> Bool:
@@ -109,13 +109,12 @@ struct MazeGenerator(Benchmark):
                 if x == 0 or y == 0 or x == self.w - 1 or y == self.h - 1:
                     cell.kind = MAZE_BORDER
                 else:
-                    cell.neighbors = List[Tuple[Int, Int]](capacity=4)
                     cell.neighbor_count = 0
 
-                    cell.neighbors.append((y - 1, x))
-                    cell.neighbors.append((y + 1, x))
-                    cell.neighbors.append((y, x + 1))
-                    cell.neighbors.append((y, x - 1))
+                    cell.neighbors[0] = (y - 1, x)
+                    cell.neighbors[1] = (y + 1, x)
+                    cell.neighbors[2] = (y, x + 1)
+                    cell.neighbors[3] = (y, x - 1)
                     cell.neighbor_count = 4
 
                     for _ in range(4):
@@ -274,13 +273,13 @@ struct MazeBFS(Benchmark):
             r.append((sx, sy))
             return r^
 
-        var visited = List[List[Bool]]()
+        var visited = List[List[Bool]](capacity=maze.h)
         for _ in range(maze.h):
             var row = List[Bool](length=maze.w, fill=False)
             visited.append(row^)
 
-        var queue = List[Int]()
-        var path_nodes = List[Tuple[Int, Int, Int]]()
+        var queue = List[Int](capacity=maze.w * maze.h)
+        var path_nodes = List[Tuple[Int, Int, Int]](capacity=maze.w * maze.h)
 
         visited[sy][sx] = True
         path_nodes.append((sx, sy, -1))
