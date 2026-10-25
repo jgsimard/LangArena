@@ -1,14 +1,14 @@
-from std.python import Python, PythonObject
+from json import Value, loads
 from helper import Helper
 
 
 struct ConfigEntry(Copyable):
     var name: String
-    var fields: Dict[String, PythonObject]
+    var fields: Value
 
-    def __init__(out self, name: String):
-        self.name = name
-        self.fields = Dict[String, PythonObject]()
+    def __init__(out self, var fields: Value) raises:
+        self.name = fields["name"].as_string()
+        self.fields = fields^
 
 
 struct Config(Copyable):
@@ -19,24 +19,13 @@ struct Config(Copyable):
         self.entries = List[ConfigEntry]()
         self.order = List[String]()
 
-        var json_mod = Python.import_module("json")
         var raw: String
         with open(path, "r") as f:
             raw = f.read()
-        var data = json_mod.loads(raw)
+        var data = loads(raw)
 
-        var length = Int(py=data.__len__())
-
-        for i in range(length):
-            var item = data[i]
-            var name = String(py=item["name"])
-            var entry = ConfigEntry(name)
-
-            var keys = item.keys()
-            for py_key in keys:
-                var key = String(py=py_key)
-                if key != "name":
-                    entry.fields[key] = item[py_key]
+        for item in data:
+            var entry = ConfigEntry(item^)
 
             self.order.append(entry.name)
             self.entries.append(entry^)
@@ -45,9 +34,8 @@ struct Config(Copyable):
         for i in range(len(self.entries)):
             ref entry = self.entries[i]
             if entry.name == class_name:
-                var val = entry.fields.get(field_name)
-                if val:
-                    return Int(py=val[])
+                if field_name in entry.fields:
+                    return Int(entry.fields[field_name].as_int())
                 else:
                     raise Error(
                         String(
@@ -60,9 +48,8 @@ struct Config(Copyable):
         for i in range(len(self.entries)):
             ref entry = self.entries[i]
             if entry.name == class_name:
-                var val = entry.fields.get(field_name)
-                if val:
-                    return String(py=val[])
+                if field_name in entry.fields:
+                    return entry.fields[field_name].as_string()
                 else:
                     raise Error(
                         String(
