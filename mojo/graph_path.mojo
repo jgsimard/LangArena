@@ -137,8 +137,7 @@ struct GraphDFS(Benchmark):
             return 0
 
         var visited = List[Bool](length=graph.vertices, fill=False)
-        var stack = List[Tuple[Int, Int]]()
-        stack.append((start, 0))
+        var stack: List[Tuple[Int, Int]] = [(start, 0)]
         var best_path = 2147483647
 
         while len(stack) > 0:

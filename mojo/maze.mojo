@@ -269,9 +269,7 @@ struct MazeBFS(Benchmark):
         ty: Int,
     ) -> List[Tuple[Int, Int]]:
         if sx == tx and sy == ty:
-            var r = List[Tuple[Int, Int]]()
-            r.append((sx, sy))
-            return r^
+            return [(sx, sy)]
 
         var visited = List[List[Bool]](capacity=maze.h)
         for _ in range(maze.h):
@@ -301,8 +299,7 @@ struct MazeBFS(Benchmark):
                 var nx = neighbor_coords[1]
 
                 if nx == tx and ny == ty:
-                    var result = List[Tuple[Int, Int]]()
-                    result.append((tx, ty))
+                    var result: List[Tuple[Int, Int]] = [(tx, ty)]
                     var current = path_id
                     while current >= 0:
                         var p = path_nodes[current]
@@ -378,9 +375,7 @@ struct MazeAStar(Benchmark):
         ty: Int,
     ) -> List[Tuple[Int, Int]]:
         if sx == tx and sy == ty:
-            var r = List[Tuple[Int, Int]]()
-            r.append((sx, sy))
-            return r^
+            return [(sx, sy)]
 
         var size = maze.w * maze.h
         var start_idx = sy * maze.w + sx

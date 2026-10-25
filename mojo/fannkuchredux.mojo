@@ -22,14 +22,9 @@ struct Fannkuchredux(Benchmark):
 
     @staticmethod
     def fannkuchredux(n: Int) -> Tuple[Int, Int]:
-        var perm1 = List[Int](capacity=32)
-        var perm = List[Int](capacity=32)
-        var count = List[Int](capacity=32)
-
-        for i in range(32):
-            perm1.append(i)
-            perm.append(0)
-            count.append(0)
+        var perm1: List[Int] = [i for i in range(32)]
+        var perm = List[Int](length=32, fill=0)
+        var count = List[Int](length=32, fill=0)
 
         var max_flips = 0
         var checksum = 0
