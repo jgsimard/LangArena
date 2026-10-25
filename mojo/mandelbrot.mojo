@@ -2,7 +2,7 @@ from helper import Helper
 from benchmark import Benchmark, Config
 
 
-struct Mandelbrot(Benchmark, Movable):
+struct Mandelbrot(Benchmark):
     var w: Int
     var h: Int
     var result_data: List[UInt8]

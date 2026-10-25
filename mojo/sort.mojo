@@ -61,7 +61,7 @@ def _merge(
         k += 1
 
 
-struct SortQuick(Benchmark, Movable):
+struct SortQuick(Benchmark):
     var size: Int
     var data: List[Int]
     var result: UInt32
@@ -89,7 +89,7 @@ struct SortQuick(Benchmark, Movable):
         return self.result
 
 
-struct SortMerge(Benchmark, Movable):
+struct SortMerge(Benchmark):
     var size: Int
     var data: List[Int]
     var result: UInt32
@@ -118,7 +118,7 @@ struct SortMerge(Benchmark, Movable):
         return self.result
 
 
-struct SortSelf(Benchmark, Movable):
+struct SortSelf(Benchmark):
     var size: Int
     var data: List[Int]
     var result: UInt32

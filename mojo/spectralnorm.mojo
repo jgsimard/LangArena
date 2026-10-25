@@ -3,7 +3,7 @@ from helper import Helper
 from benchmark import Benchmark, Config
 
 
-struct Spectralnorm(Benchmark, Movable):
+struct Spectralnorm(Benchmark):
     var size: Int
     var u: List[Float64]
     var v: List[Float64]
@@ -11,11 +11,8 @@ struct Spectralnorm(Benchmark, Movable):
 
     def __init__(out self, config: Config) raises:
         self.size = config.get_i64("CLBG::Spectralnorm", "size")
-        self.u = List[Float64](capacity=self.size)
-        self.v = List[Float64](capacity=self.size)
-        for _ in range(self.size):
-            self.u.append(1.0)
-            self.v.append(1.0)
+        self.u = List[Float64](length=self.size, fill=1.0)
+        self.v = List[Float64](length=self.size, fill=1.0)
         self.result = 0
 
     def class_name(self) -> String:

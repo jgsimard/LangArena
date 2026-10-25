@@ -2,7 +2,7 @@ from helper import Helper
 from benchmark import Benchmark, Config
 
 
-struct Words(Benchmark, Movable):
+struct Words(Benchmark):
     var words: Int
     var word_len: Int
     var text: String

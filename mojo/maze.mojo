@@ -41,7 +41,7 @@ struct _MazeCell(Copyable):
             self.kind = MAZE_WALL
 
 
-struct AStarEntry(Comparable, Copyable, Movable):
+struct AStarEntry(Comparable, Copyable):
     var priority: Int
     var vertex: Int
 
@@ -58,7 +58,7 @@ struct AStarEntry(Comparable, Copyable, Movable):
         return self.priority == other.priority and self.vertex == other.vertex
 
 
-struct MazeGenerator(Benchmark, Movable):
+struct MazeGenerator(Benchmark):
     var w: Int
     var h: Int
     var cells: List[List[_MazeCell]]
@@ -154,23 +154,15 @@ struct MazeGenerator(Benchmark, Movable):
         self.cells[self.finish_y][self.finish_x].kind = MAZE_FINISH
 
     def _generate(mut self):
-        var start_neighbors = self.cells[self.start_y][
-            self.start_x
-        ].neighbors.copy()
-
         for i in range(4):
-            var neighbor = start_neighbors[i]
+            var neighbor = self.cells[self.start_y][self.start_x].neighbors[i]
             var ny = neighbor[0]
             var nx = neighbor[1]
             if self.cells[ny][nx].kind == MAZE_WALL:
                 self._dig(ny, nx)
 
-        var finish_neighbors = self.cells[self.finish_y][
-            self.finish_x
-        ].neighbors.copy()
-
         for i in range(4):
-            var neighbor = finish_neighbors[i]
+            var neighbor = self.cells[self.finish_y][self.finish_x].neighbors[i]
             var ny = neighbor[0]
             var nx = neighbor[1]
             if self.cells[ny][nx].kind == MAZE_WALL:
@@ -229,7 +221,7 @@ struct MazeGenerator(Benchmark, Movable):
                 self._ensure_open_finish(ny, nx)
 
 
-struct MazeBFS(Benchmark, Movable):
+struct MazeBFS(Benchmark):
     var generator: MazeGenerator
     var result: UInt32
     var path: List[Tuple[Int, Int]]
@@ -317,10 +309,8 @@ struct MazeBFS(Benchmark, Movable):
                         var p = path_nodes[current]
                         result.append((p[0], p[1]))
                         current = p[2]
-                    var reversed_result = List[Tuple[Int, Int]]()
-                    for i in range(len(result) - 1, -1, -1):
-                        reversed_result.append(result[i])
-                    return reversed_result^
+                    result.reverse()
+                    return result^
 
                 if maze.cells[ny][nx].is_walkable() and not visited[ny][nx]:
                     visited[ny][nx] = True
@@ -330,7 +320,7 @@ struct MazeBFS(Benchmark, Movable):
         return List[Tuple[Int, Int]]()
 
 
-struct MazeAStar(Benchmark, Movable):
+struct MazeAStar(Benchmark):
     var generator: MazeGenerator
     var result: UInt32
     var path: List[Tuple[Int, Int]]
@@ -421,10 +411,8 @@ struct MazeAStar(Benchmark, Movable):
                     result.append((cx, cy))
                     cur_idx = came_from[cur_idx]
 
-                var reversed_result = List[Tuple[Int, Int]]()
-                for i in range(len(result) - 1, -1, -1):
-                    reversed_result.append(result[i])
-                return reversed_result^
+                result.reverse()
+                return result^
 
             var cy = current_idx // maze.w
             var cx = current_idx % maze.w

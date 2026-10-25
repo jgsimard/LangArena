@@ -2,7 +2,7 @@ from helper import Helper
 from benchmark import Benchmark, Config
 
 
-struct Fannkuchredux(Benchmark, Movable):
+struct Fannkuchredux(Benchmark):
     var n: Int
     var result: UInt32
 

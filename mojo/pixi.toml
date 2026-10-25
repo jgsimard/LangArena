@@ -1,6 +1,6 @@
 [workspace]
 authors = ["Konstantin Makarchev <kostya27@gmail.com>"]
-channels = ["https://conda.modular.com/max-nightly", "conda-forge"]
+channels = ["https://conda.modular.com/max-nightly", "conda-forge", "https://repo.prefix.dev/modular-community"]
 name = "mojo"
 platforms = ["osx-arm64", "linux-64"]
 version = "0.1.0"
@@ -9,5 +9,8 @@ preview = ["pixi-build"]
 [tasks]
 
 [dependencies]
-mojo = "=1.2.0.dev2026101805"
+mojo = "=1.2.0"
 max = ">=0" 
+json = { git = "https://github.com/ehsanmok/json.git", tag = "v0.4.2" }
+moregex = { git = "https://github.com/jgsimard/moregex.git", branch = "main" }
+mojo_csv = ">=1.8.1,<2"

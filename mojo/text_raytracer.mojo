@@ -75,7 +75,7 @@ struct _Light(Copyable, ImplicitlyCopyable):
         self.color = color
 
 
-struct TextRaytracer(Benchmark, Movable):
+struct TextRaytracer(Benchmark):
     var w: Int
     var h: Int
     var result: UInt32

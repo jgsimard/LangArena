@@ -29,7 +29,7 @@ from compress import ArithEncode, ArithDecode, LZWEncode, LZWDecode
 from csv import CsvParse
 from log_parser import LogParser
 from template import TemplateRegex, TemplateParse
-from json import JsonGenerate, JsonParseDom, JsonParseMapping
+from json_benchmarks import JsonGenerate, JsonParseDom, JsonParseMapping
 
 comptime BenchVariant = Variant[
     BinarytreesObj,

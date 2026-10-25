@@ -11,7 +11,7 @@ struct _GOLCell(Copyable):
     def __init__(out self, alive: Bool = False):
         self.alive = alive
         self.next_state = False
-        self.neighbors = List[Pointer[_GOLCell, MutUntrackedOrigin]]()
+        self.neighbors = List[Pointer[_GOLCell, MutUntrackedOrigin]](capacity=8)
 
     def add_neighbor(mut self, cell: Pointer[_GOLCell, MutUntrackedOrigin]):
         self.neighbors.append(cell)
@@ -39,10 +39,10 @@ struct _GOLGrid(Movable):
     def __init__(out self, width: Int, height: Int):
         self.width = width
         self.height = height
-        self.cells = List[List[_GOLCell]]()
+        self.cells = List[List[_GOLCell]](capacity=height)
 
         for _ in range(height):
-            var row = List[_GOLCell]()
+            var row = List[_GOLCell](capacity=width)
             for _ in range(width):
                 row.append(_GOLCell(False))
             self.cells.append(row^)
@@ -50,9 +50,13 @@ struct _GOLGrid(Movable):
         self._link_neighbors()
 
     def _link_neighbors(mut self):
-        var cell_ptrs = List[List[Pointer[_GOLCell, MutUntrackedOrigin]]]()
+        var cell_ptrs = List[List[Pointer[_GOLCell, MutUntrackedOrigin]]](
+            capacity=self.height
+        )
         for y in range(self.height):
-            var row_ptrs = List[Pointer[_GOLCell, MutUntrackedOrigin]]()
+            var row_ptrs = List[Pointer[_GOLCell, MutUntrackedOrigin]](
+                capacity=self.width
+            )
             for x in range(self.width):
                 row_ptrs.append(
                     Pointer(to=self.cells[y][x]).unsafe_origin_cast[
@@ -105,7 +109,7 @@ struct _GOLGrid(Movable):
         return hash
 
 
-struct GameOfLife(Benchmark, Movable):
+struct GameOfLife(Benchmark):
     var w: Int
     var h: Int
     var grid: _GOLGrid

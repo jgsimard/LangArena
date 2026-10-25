@@ -141,7 +141,7 @@ struct _LRUCache(Movable):
         return self.size_val
 
 
-struct CacheSimulation(Benchmark, Movable):
+struct CacheSimulation(Benchmark):
     var values_size: Int
     var cache_size: Int
     var cache: _LRUCache

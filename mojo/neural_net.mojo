@@ -54,23 +54,25 @@ struct _NN(Movable):
     ):
         var total = inputs + hidden + outputs
 
-        self.neurons = List[_Neuron]()
+        self.neurons = List[_Neuron](capacity=total)
         for _ in range(total):
             self.neurons.append(_Neuron(helper))
 
-        self.input_indices = List[Int]()
+        self.input_indices = List[Int](capacity=inputs)
         for i in range(inputs):
             self.input_indices.append(i)
 
-        self.hidden_indices = List[Int]()
+        self.hidden_indices = List[Int](capacity=hidden)
         for i in range(hidden):
             self.hidden_indices.append(inputs + i)
 
-        self.output_indices = List[Int]()
+        self.output_indices = List[Int](capacity=outputs)
         for i in range(outputs):
             self.output_indices.append(inputs + hidden + i)
 
-        self.synapses = List[_Synapse]()
+        self.synapses = List[_Synapse](
+            capacity=inputs * hidden + hidden * outputs
+        )
         for i in range(inputs):
             var src_idx = self.input_indices[i]
             for j in range(hidden):
@@ -97,7 +99,7 @@ struct _NN(Movable):
             var neuron_idx = self.hidden_indices[i]
             var activation: Float64 = 0.0
             for syn_idx in self.neurons[neuron_idx].synapses_in:
-                var syn = self.synapses[syn_idx]
+                ref syn = self.synapses[syn_idx]
                 activation += syn.weight * self.neurons[syn.source_idx].output
             activation -= self.neurons[neuron_idx].threshold
             self.neurons[neuron_idx].output = 1.0 / (1.0 + exp(-activation))
@@ -106,7 +108,7 @@ struct _NN(Movable):
             var neuron_idx = self.output_indices[i]
             var activation: Float64 = 0.0
             for syn_idx in self.neurons[neuron_idx].synapses_in:
-                var syn = self.synapses[syn_idx]
+                ref syn = self.synapses[syn_idx]
                 activation += syn.weight * self.neurons[syn.source_idx].output
             activation -= self.neurons[neuron_idx].threshold
             self.neurons[neuron_idx].output = 1.0 / (1.0 + exp(-activation))
@@ -125,7 +127,7 @@ struct _NN(Movable):
             ref neuron = self.neurons[neuron_idx]
             var sum: Float64 = 0.0
             for syn_idx in neuron.synapses_out:
-                var syn = self.synapses[syn_idx]
+                ref syn = self.synapses[syn_idx]
                 sum += syn.prev_weight * self.neurons[syn.dest_idx].error
             neuron.error = sum * neuron.derivative()
             self._update_weights(neuron_idx)
@@ -134,7 +136,7 @@ struct _NN(Movable):
         ref neuron = self.neurons[neuron_idx]
 
         for syn_idx in neuron.synapses_in:
-            var syn = self.synapses[syn_idx]
+            ref syn = self.synapses[syn_idx]
             var temp_weight = syn.weight
             syn.weight += (
                 NN_TRAIN_RATE
@@ -143,7 +145,6 @@ struct _NN(Movable):
                 * self.neurons[syn.source_idx].output
             ) + NN_MOMENTUM * (syn.weight - syn.prev_weight)
             syn.prev_weight = temp_weight
-            self.synapses[syn_idx] = syn
 
         var temp_threshold = neuron.threshold
         neuron.threshold += (
@@ -152,7 +153,7 @@ struct _NN(Movable):
         neuron.prev_threshold = temp_threshold
 
 
-struct NeuralNet(Benchmark, Movable):
+struct NeuralNet(Benchmark):
     var nn: _NN
     var input00: List[Float64]
     var input10: List[Float64]
@@ -165,27 +166,12 @@ struct NeuralNet(Benchmark, Movable):
         var dummy_helper = Helper()
         self.nn = _NN(0, 0, 0, dummy_helper)
 
-        self.input00 = List[Float64]()
-        self.input00.append(0.0)
-        self.input00.append(0.0)
-
-        self.input10 = List[Float64]()
-        self.input10.append(1.0)
-        self.input10.append(0.0)
-
-        self.input01 = List[Float64]()
-        self.input01.append(0.0)
-        self.input01.append(1.0)
-
-        self.input11 = List[Float64]()
-        self.input11.append(1.0)
-        self.input11.append(1.0)
-
-        self.target0 = List[Float64]()
-        self.target0.append(0.0)
-
-        self.target1 = List[Float64]()
-        self.target1.append(1.0)
+        self.input00 = [0.0, 0.0]
+        self.input10 = [1.0, 0.0]
+        self.input01 = [0.0, 1.0]
+        self.input11 = [1.0, 1.0]
+        self.target0 = [0.0]
+        self.target1 = [1.0]
 
     def class_name(self) -> String:
         return "Etc::NeuralNet"

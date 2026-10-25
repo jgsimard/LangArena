@@ -1,32 +1,52 @@
-from std.python import Python
+from json import Value, deserialize_json, dumps, loads
 from helper import Helper
 from benchmark import Benchmark, Config
 
 
 def generate_json_data(n: Int, mut helper: Helper) raises -> String:
-    var json_mod = Python.import_module("json")
-    var coords = Python.list()
+    var coords = Value.array()
 
     for _ in range(n):
-        var coord = Python.dict()
-        coord["x"] = round(helper.next_float(), 8)
-        coord["y"] = round(helper.next_float(), 8)
-        coord["z"] = round(helper.next_float(), 8)
-        coord["name"] = String("%.7f %d").format(
-            helper.next_float(), helper.next_int(10000)
+        var coord = Value.object()
+        coord.set("x", Value(round(helper.next_float(), 8)))
+        coord.set("y", Value(round(helper.next_float(), 8)))
+        coord.set("z", Value(round(helper.next_float(), 8)))
+        coord.set(
+            "name",
+            Value(
+                String("%.7f %d").format(
+                    helper.next_float(), helper.next_int(10000)
+                )
+            ),
         )
-        coord["opts"] = Python.dict()
-        coord["opts"]["1"] = Python.tuple(1, True)
-        coords.append(coord)
+        var pair = Value.array()
+        pair.append(Value(1))
+        pair.append(Value(True))
+        var opts = Value.object()
+        opts.set("1", pair^)
+        coord.set("opts", opts^)
+        coords.append(coord^)
 
-    var root = Python.dict()
-    root["coordinates"] = coords
-    root["info"] = "some info"
+    var root = Value.object()
+    root.set("coordinates", coords^)
+    root.set("info", Value("some info"))
 
-    return String(py=json_mod.dumps(root))
+    return dumps(root)
 
 
-struct JsonGenerate(Benchmark, Movable):
+@fieldwise_init
+struct Coordinate(Copyable):
+    var x: Float64
+    var y: Float64
+    var z: Float64
+
+
+@fieldwise_init
+struct Coordinates(Movable):
+    var coordinates: List[Coordinate]
+
+
+struct JsonGenerate(Benchmark):
     var n: Int
     var result: UInt32
     var text: String
@@ -50,7 +70,7 @@ struct JsonGenerate(Benchmark, Movable):
         return self.result
 
 
-struct JsonParseDom(Benchmark, Movable):
+struct JsonParseDom(Benchmark):
     var n: Int
     var text: String
     var result: UInt32
@@ -67,21 +87,19 @@ struct JsonParseDom(Benchmark, Movable):
         self.text = generate_json_data(self.n, helper)
 
     def run(mut self, iteration_id: Int, mut helper: Helper) raises:
-        var json_mod = Python.import_module("json")
-        var data = json_mod.loads(self.text)
+        var data = loads(self.text)
 
         var coordinates = data["coordinates"]
-        var len_coords = Float64(Int(py=coordinates.__len__()))
+        var len_coords = Float64(len(coordinates))
 
         var x_sum: Float64 = 0.0
         var y_sum: Float64 = 0.0
         var z_sum: Float64 = 0.0
 
-        for i in range(Int(py=coordinates.__len__())):
-            var coord = coordinates[i]
-            x_sum += Float64(py=coord["x"])
-            y_sum += Float64(py=coord["y"])
-            z_sum += Float64(py=coord["z"])
+        for coord in coordinates:
+            x_sum += coord["x"].float_value()
+            y_sum += coord["y"].float_value()
+            z_sum += coord["z"].float_value()
 
         self.result += Helper.checksum_f64(x_sum / len_coords)
         self.result += Helper.checksum_f64(y_sum / len_coords)
@@ -91,7 +109,7 @@ struct JsonParseDom(Benchmark, Movable):
         return self.result
 
 
-struct JsonParseMapping(Benchmark, Movable):
+struct JsonParseMapping(Benchmark):
     var n: Int
     var text: String
     var result: UInt32
@@ -108,21 +126,19 @@ struct JsonParseMapping(Benchmark, Movable):
         self.text = generate_json_data(self.n, helper)
 
     def run(mut self, iteration_id: Int, mut helper: Helper) raises:
-        var json_mod = Python.import_module("json")
-        var data = json_mod.loads(self.text)
+        var data = deserialize_json[Coordinates](self.text)
 
-        var coordinates = data["coordinates"]
-        var len_coords = Float64(Int(py=coordinates.__len__()))
+        ref coordinates = data.coordinates
+        var len_coords = Float64(len(coordinates))
 
         var x_sum: Float64 = 0.0
         var y_sum: Float64 = 0.0
         var z_sum: Float64 = 0.0
 
-        for i in range(Int(py=coordinates.__len__())):
-            var coord = coordinates[i]
-            x_sum += Float64(py=coord["x"])
-            y_sum += Float64(py=coord["y"])
-            z_sum += Float64(py=coord["z"])
+        for coord in coordinates:
+            x_sum += coord.x
+            y_sum += coord.y
+            z_sum += coord.z
 
         self.result += Helper.checksum_f64(x_sum / len_coords)
         self.result += Helper.checksum_f64(y_sum / len_coords)

@@ -31,7 +31,7 @@ struct _Graph(Movable):
                     self.add_edge(v, u)
 
 
-struct AStarEntry(Comparable, Copyable, Movable):
+struct AStarEntry(Comparable, Copyable):
     var priority: Int
     var vertex: Int
 
@@ -48,7 +48,7 @@ struct AStarEntry(Comparable, Copyable, Movable):
         return self.priority == other.priority and self.vertex == other.vertex
 
 
-struct GraphBFS(Benchmark, Movable):
+struct GraphBFS(Benchmark):
     var graph: _Graph
     var result: UInt32
     var jumps: Int
@@ -103,7 +103,7 @@ struct GraphBFS(Benchmark, Movable):
         return -1
 
 
-struct GraphDFS(Benchmark, Movable):
+struct GraphDFS(Benchmark):
     var graph: _Graph
     var result: UInt32
     var jumps: Int
@@ -164,7 +164,7 @@ struct GraphDFS(Benchmark, Movable):
         return best_path
 
 
-struct GraphAStar(Benchmark, Movable):
+struct GraphAStar(Benchmark):
     var graph: _Graph
     var result: UInt32
     var jumps: Int

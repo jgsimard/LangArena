@@ -1,14 +1,14 @@
 from helper import Helper
 from benchmark import Benchmark, Config
 
-comptime CHAR_PLUS: UInt8 = UInt8(ord("+"))
-comptime CHAR_MINUS: UInt8 = UInt8(ord("-"))
-comptime CHAR_LESS: UInt8 = UInt8(ord("<"))
-comptime CHAR_GREATER: UInt8 = UInt8(ord(">"))
-comptime CHAR_LEFT_BRACKET: UInt8 = UInt8(ord("["))
-comptime CHAR_RIGHT_BRACKET: UInt8 = UInt8(ord("]"))
-comptime CHAR_DOT: UInt8 = UInt8(ord("."))
-comptime CHAR_COMMA: UInt8 = UInt8(ord(","))
+comptime CHAR_PLUS = UInt8(ord("+"))
+comptime CHAR_MINUS = UInt8(ord("-"))
+comptime CHAR_LESS = UInt8(ord("<"))
+comptime CHAR_GREATER = UInt8(ord(">"))
+comptime CHAR_LEFT_BRACKET = UInt8(ord("["))
+comptime CHAR_RIGHT_BRACKET = UInt8(ord("]"))
+comptime CHAR_DOT = UInt8(ord("."))
+comptime CHAR_COMMA = UInt8(ord(","))
 
 
 struct _Tape:
@@ -38,7 +38,7 @@ struct _Tape:
             self.pos -= 1
 
 
-struct BrainfuckArray(Benchmark, Movable):
+struct BrainfuckArray(Benchmark):
     var program_text: String
     var warmup_text: String
     var result_val: UInt32
@@ -69,26 +69,18 @@ struct BrainfuckArray(Benchmark, Movable):
 
     @staticmethod
     def _parse_commands(source: String) -> List[UInt8]:
-        var result = List[UInt8]()
-
-        for cp in source.codepoint_slices():
-            var s = String(cp)
-            if s.byte_length() == 1:
-                var b = UInt8(s.as_bytes()[0])
-
-                if (
-                    b == CHAR_PLUS
-                    or b == CHAR_MINUS
-                    or b == CHAR_LESS
-                    or b == CHAR_GREATER
-                    or b == CHAR_LEFT_BRACKET
-                    or b == CHAR_RIGHT_BRACKET
-                    or b == CHAR_DOT
-                    or b == CHAR_COMMA
-                ):
-                    result.append(b)
-
-        return result^
+        return [
+            b
+            for b in source.as_bytes()
+            if b == CHAR_PLUS
+            or b == CHAR_MINUS
+            or b == CHAR_LESS
+            or b == CHAR_GREATER
+            or b == CHAR_LEFT_BRACKET
+            or b == CHAR_RIGHT_BRACKET
+            or b == CHAR_DOT
+            or b == CHAR_COMMA
+        ]
 
     @staticmethod
     def _build_jump_array(commands: List[UInt8]) -> List[Int]:
@@ -112,7 +104,7 @@ struct BrainfuckArray(Benchmark, Movable):
         return jumps^
 
     @staticmethod
-    def _execute(commands: List[UInt8], jumps: List[Int]) -> UInt32:
+    def _execute(var commands: List[UInt8], var jumps: List[Int]) -> UInt32:
         var tape = _Tape()
         var pc: Int = 0
         var result: UInt32 = 0
