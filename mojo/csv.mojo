@@ -1,4 +1,4 @@
-from std.python import Python
+from mojo_csv import CsvReader
 from helper import Helper
 from benchmark import Benchmark, Config
 
@@ -59,18 +59,22 @@ struct CsvParse(Benchmark):
             self.data += "\n"
 
     def run(mut self, iteration_id: Int, mut helper: Helper) raises:
-        var csv_mod = Python.import_module("csv")
-        var io_mod = Python.import_module("io")
-        var reader = csv_mod.reader(io_mod.StringIO(self.data))
+        var reader = CsvReader(
+            List[String](), col_count=6, has_header=False, num_threads=1
+        )
+        reader.raw = self.data
+        reader.raw_length = reader.raw.byte_length()
+        reader._create_threaded_reader()
+        reader.length = len(reader.elements)
 
         var points = List[CsvPoint](capacity=self.rows)
 
-        for row in reader:
-            var row_len = Int(py=row.__len__())
-            if row_len >= 6:
-                var x = atof(StringSlice(String(py=row[1])))
-                var z = atof(StringSlice(String(py=row[3])))
-                var y = atof(StringSlice(String(py=row[5])))
+        for row in range(reader.row_count):
+            if reader.col_count >= 6:
+                var offset = row * reader.col_count
+                var x = atof(StringSlice(reader.elements[offset + 1]))
+                var z = atof(StringSlice(reader.elements[offset + 3]))
+                var y = atof(StringSlice(reader.elements[offset + 5]))
 
                 points.append(CsvPoint(x, y, z))
 
