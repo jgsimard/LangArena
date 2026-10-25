@@ -4,10 +4,11 @@ from benchmark import Benchmark, Config
 
 def generate_test_data(size: Int) -> List[UInt8]:
     var pattern = "ABRACADABRA"
-    var data = List[UInt8]()
-    var pl = pattern.byte_length()
-    for i in range(size):
-        data.append(pattern.as_bytes()[i % pl])
+    var pattern_bytes = pattern.as_bytes()
+    var data = List[UInt8](length=max(size, 0), fill=0)
+    for start in range(0, size, len(pattern_bytes)):
+        var count = min(len(pattern_bytes), size - start)
+        data[start : start + count].copy_from(pattern_bytes[:count])
     return data^
 
 
@@ -899,8 +900,7 @@ struct LZWDecode(Benchmark):
         pos += 2
 
         var old_str = dict[old_code]
-        for b in old_str.as_bytes():
-            result.append(UInt8(b))
+        result.extend(old_str.as_bytes())
 
         var next_code = 256
 
@@ -918,8 +918,7 @@ struct LZWDecode(Benchmark):
             else:
                 return List[UInt8]()
 
-            for b in new_str.as_bytes():
-                result.append(UInt8(b))
+            result.extend(new_str.as_bytes())
 
             dict.append(old_str + String(new_str[byte=0]))
             next_code += 1

@@ -41,8 +41,7 @@ struct Fannkuchredux(Benchmark):
                 count[r - 1] = r
                 r -= 1
 
-            for i in range(n):
-                perm[i] = perm1[i]
+            perm[:n].copy_from(perm1[:n])
 
             var flips = 0
             var k = perm[0]

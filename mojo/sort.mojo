@@ -39,8 +39,7 @@ def _merge_sort(mut arr: List[Int], mut temp: List[Int], left: Int, right: Int):
 def _merge(
     mut arr: List[Int], mut temp: List[Int], left: Int, mid: Int, right: Int
 ):
-    for i in range(left, right + 1):
-        temp[i] = arr[i]
+    temp[left : right + 1].copy_from(arr[left : right + 1])
 
     var i = left
     var j = mid + 1
