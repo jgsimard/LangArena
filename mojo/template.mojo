@@ -1,15 +1,16 @@
-from std.python import Python, PythonObject
+from moregex import Regex, finditer_span
 from helper import Helper
 from benchmark import Benchmark, Config
 
 
 struct TemplateRegex(Benchmark):
+    comptime _PATTERN = Regex(r"\{\{(.*?)\}\}")
+
     var count: Int
     var text: String
     var rendered: String
     var checksum_val: UInt32
     var vars: Dict[String, String]
-    var compiled_pattern: PythonObject
 
     def __init__(out self, config: Config) raises:
         self.count = config.get_i64("Template::Regex", "count")
@@ -17,8 +18,6 @@ struct TemplateRegex(Benchmark):
         self.rendered = ""
         self.checksum_val = 0
         self.vars = Dict[String, String]()
-        var re = Python.import_module("re")
-        self.compiled_pattern = re.compile(r"\{\{(.*?)\}\}")
 
     def class_name(self) -> String:
         return "Template::Regex"
@@ -31,23 +30,23 @@ struct TemplateRegex(Benchmark):
     def run(mut self, iteration_id: Int, mut helper: Helper) raises:
         var result = String(capacity_bytes=self.text.byte_length())
         var text_len = self.text.byte_length()
+        var text = self.text[byte=0:text_len]
         var last_pos = 0
 
-        for _match in self.compiled_pattern.finditer(self.text):
-            var match_start = Int(py=_match.start())
-            var match_end = Int(py=_match.end())
-            var key = String(py=_match.group(1))
+        for found in finditer_span[Self._PATTERN](text):
+            var match_start = found.start()
+            var match_end = found.end()
 
-            result += self.text[byte=last_pos:match_start]
+            result += text[byte=last_pos:match_start]
 
-            var stripped = String(key.strip())
+            var stripped = String(found.group_span(text, 1).strip())
 
             if stripped in self.vars:
                 result += self.vars[stripped]
 
             last_pos = match_end
 
-        result += self.text[byte=last_pos:text_len]
+        result += text[byte=last_pos:text_len]
 
         self.rendered = result^
         self.checksum_val += UInt32(self.rendered.byte_length())

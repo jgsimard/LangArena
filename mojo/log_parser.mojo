@@ -1,19 +1,36 @@
-from std.python import Python, PythonObject
+from moregex import Regex, count
 from helper import Helper
 from benchmark import Benchmark, Config
 
 
 struct LogParser(Benchmark):
+    comptime _PATTERNS = [
+        Regex(r" [5][0-9]{2} | [4][0-9]{2} "),
+        Regex(
+            r"bot|crawler|scanner|spider|indexing|crawl|robot|spider",
+            case_insensitive=True,
+        ),
+        Regex(r"etc/passwd|wp-admin|\.\./", case_insensitive=True),
+        Regex(r"\d+\.\d+\.\d+\.35"),
+        Regex(r'/api/[^ " ]+'),
+        Regex(r"POST [^ ]* HTTP"),
+        Regex(r"/login|/signin", case_insensitive=True),
+        Regex(r"get|post|put", case_insensitive=True),
+        Regex(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"),
+        Regex(r'password=[^&\s"]+'),
+        Regex(r'token=[^&\s"]+|api[_-]?key=[^&\s"]+'),
+        Regex(r'session[_-]?id=[^&\s"]+'),
+        Regex(r"\[\d+/\w+/\d+:1[3-7]:\d+:\d+ [+\-]\d+\]"),
+    ]
+
     var lines_count: Int
     var log: String
     var _checksum: UInt32
-    var compiled_patterns: PythonObject
 
     def __init__(out self, config: Config) raises:
         self.lines_count = config.get_i64("Etc::LogParser", "lines_count")
         self.log = ""
         self._checksum = 0
-        self.compiled_patterns = PythonObject(None)
 
     def class_name(self) -> String:
         return "Etc::LogParser"
@@ -21,77 +38,9 @@ struct LogParser(Benchmark):
     def prepare(mut self, mut helper: Helper) raises:
         self.log = self._generate_log()
 
-        var re = Python.import_module("re")
-        var patterns = Python.list()
-        patterns.append(
-            Python.tuple("errors", re.compile(r" [5][0-9]{2} | [4][0-9]{2} "))
-        )
-        patterns.append(
-            Python.tuple(
-                "bots",
-                re.compile(
-                    r"bot|crawler|scanner|spider|indexing|crawl|robot|spider",
-                    re.IGNORECASE,
-                ),
-            )
-        )
-        patterns.append(
-            Python.tuple(
-                "suspicious",
-                re.compile(r"etc/passwd|wp-admin|\.\./", re.IGNORECASE),
-            )
-        )
-        patterns.append(Python.tuple("ips", re.compile(r"\d+\.\d+\.\d+\.35")))
-        patterns.append(Python.tuple("api_calls", re.compile(r'/api/[^ " ]+')))
-        patterns.append(
-            Python.tuple("post_requests", re.compile(r"POST [^ ]* HTTP"))
-        )
-        patterns.append(
-            Python.tuple(
-                "auth_attempts", re.compile(r"/login|/signin", re.IGNORECASE)
-            )
-        )
-        patterns.append(
-            Python.tuple("methods", re.compile(r"get|post|put", re.IGNORECASE))
-        )
-        patterns.append(
-            Python.tuple(
-                "emails",
-                re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"),
-            )
-        )
-        patterns.append(
-            Python.tuple("passwords", re.compile(r'password=[^&\s"]+'))
-        )
-        patterns.append(
-            Python.tuple(
-                "tokens", re.compile(r'token=[^&\s"]+|api[_-]?key=[^&\s"]+')
-            )
-        )
-        patterns.append(
-            Python.tuple("sessions", re.compile(r'session[_-]?id=[^&\s"]+'))
-        )
-        patterns.append(
-            Python.tuple(
-                "peak_hours",
-                re.compile(r"\[\d+/\w+/\d+:1[3-7]:\d+:\d+ [+\-]\d+\]"),
-            )
-        )
-
-        self.compiled_patterns = patterns
-
     def run(mut self, iteration_id: Int, mut helper: Helper) raises:
-        var patterns = self.compiled_patterns
-        for i in range(Int(py=patterns.__len__())):
-            var pair = patterns[i]
-            var name = pair[0]
-            var compiled = pair[1]
-
-            var count = 0
-            var iter = compiled.finditer(self.log)
-            for _ in iter:
-                count += 1
-            self._checksum += UInt32(count)
+        comptime for pattern in Self._PATTERNS:
+            self._checksum += UInt32(count[pattern](self.log))
 
     def checksum(self) -> UInt32:
         return self._checksum

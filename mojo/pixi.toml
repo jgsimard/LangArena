@@ -12,3 +12,4 @@ preview = ["pixi-build"]
 mojo = "=1.2.0"
 max = ">=0" 
 json = { git = "https://github.com/ehsanmok/json.git", tag = "v0.4.2" }
+moregex = { git = "https://github.com/jgsimard/moregex.git", branch = "main" }
