@@ -61,15 +61,11 @@ struct CsvParse(Benchmark, Movable):
     def run(mut self, iteration_id: Int, mut helper: Helper) raises:
         var csv_mod = Python.import_module("csv")
         var io_mod = Python.import_module("io")
-        var builtins = Python.import_module("builtins")
-
         var reader = csv_mod.reader(io_mod.StringIO(self.data))
-        var rows_list = builtins.list(reader)
 
-        var points = List[CsvPoint]()
+        var points = List[CsvPoint](capacity=self.rows)
 
-        for i in range(Int(py=rows_list.__len__())):
-            var row = rows_list[i]
+        for row in reader:
             var row_len = Int(py=row.__len__())
             if row_len >= 6:
                 var x = atof(StringSlice(String(py=row[1])))

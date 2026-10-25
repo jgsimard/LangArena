@@ -139,11 +139,14 @@ struct MatmulParallel(Benchmark, Movable):
             var end_row = min(start_row + rows_per_worker, n)
 
             for i in range(start_row, end_row):
+                ref ai = a[i]
+                ref ci = c[i]
                 for j in range(n):
                     var s: Float64 = 0.0
+                    ref b_tj = b_t[j]
                     for k in range(n):
-                        s += a[i][k] * b_t[j][k]
-                    c[i][j] = s
+                        s += ai[k] * b_tj[k]
+                    ci[j] = s
 
         parallelize(compute_row, num_threads)
         return c^

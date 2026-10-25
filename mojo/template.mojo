@@ -29,7 +29,7 @@ struct TemplateRegex(Benchmark, Movable):
         self.text = Self._build_text(self.count, self.vars)
 
     def run(mut self, iteration_id: Int, mut helper: Helper) raises:
-        var result = ""
+        var result = String(capacity_bytes=self.text.byte_length())
         var text_len = self.text.byte_length()
         var last_pos = 0
 
@@ -38,8 +38,7 @@ struct TemplateRegex(Benchmark, Movable):
             var match_end = Int(py=_match.end())
             var key = String(py=_match.group(1))
 
-            for k in range(last_pos, match_start):
-                result += String(self.text[byte=k])
+            result += self.text[byte=last_pos:match_start]
 
             var stripped = String(key.strip())
 
@@ -48,10 +47,9 @@ struct TemplateRegex(Benchmark, Movable):
 
             last_pos = match_end
 
-        for k in range(last_pos, text_len):
-            result += String(self.text[byte=k])
+        result += self.text[byte=last_pos:text_len]
 
-        self.rendered = result
+        self.rendered = result^
         self.checksum_val += UInt32(self.rendered.byte_length())
 
     def checksum(self) -> UInt32:

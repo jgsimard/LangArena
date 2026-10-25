@@ -5,7 +5,7 @@ from benchmark import Benchmark, Config
 def generate_pair_strings(
     mut helper: Helper, n: Int, m: Int
 ) -> List[Tuple[String, String]]:
-    var pairs = List[Tuple[String, String]]()
+    var pairs = List[Tuple[String, String]](capacity=n)
     var chars = List[String]()
     chars.append("a")
     chars.append("b")
@@ -30,7 +30,7 @@ def generate_pair_strings(
         for _ in range(len2):
             str2 += chars[helper.next_int(10)]
 
-        pairs.append((str1, str2))
+        pairs.append((str1^, str2^))
 
     return pairs^
 
@@ -54,8 +54,7 @@ struct DistanceJaro(Benchmark, Movable):
         self.pairs = generate_pair_strings(helper, self.count, self.size)
 
     def run(mut self, iteration_id: Int, mut helper: Helper) raises:
-        for i in range(len(self.pairs)):
-            var pair = self.pairs[i]
+        for pair in self.pairs:
             self.result += UInt32(Self.jaro(pair[0], pair[1]) * 1000)
 
     def checksum(mut self) -> UInt32:
@@ -133,8 +132,7 @@ struct DistanceNGram(Benchmark, Movable):
         self.pairs = generate_pair_strings(helper, self.count, self.size)
 
     def run(mut self, iteration_id: Int, mut helper: Helper) raises:
-        for i in range(len(self.pairs)):
-            var pair = self.pairs[i]
+        for pair in self.pairs:
             self.result += UInt32(Self.ngram(pair[0], pair[1]) * 1000)
 
     def checksum(mut self) -> UInt32:
