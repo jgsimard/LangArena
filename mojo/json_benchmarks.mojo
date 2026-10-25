@@ -3,7 +3,7 @@ from helper import Helper
 from benchmark import Benchmark, Config
 
 
-def generate_json_data(n: Int, mut helper: Helper) raises -> String:
+def build_json_tree(n: Int, mut helper: Helper) raises -> Value:
     var coords = Value.array()
 
     for _ in range(n):
@@ -31,7 +31,11 @@ def generate_json_data(n: Int, mut helper: Helper) raises -> String:
     root.set("coordinates", coords^)
     root.set("info", Value("some info"))
 
-    return dumps(root)
+    return root^
+
+
+def generate_json_data(n: Int, mut helper: Helper) raises -> String:
+    return dumps(build_json_tree(n, helper))
 
 
 @fieldwise_init
@@ -50,17 +54,22 @@ struct JsonGenerate(Benchmark):
     var n: Int
     var result: UInt32
     var text: String
+    var root: Value
 
     def __init__(out self, config: Config) raises:
         self.n = config.get_i64("Json::Generate", "coords")
         self.result = 0
         self.text = ""
+        self.root = Value.object()
 
     def class_name(self) -> String:
         return "Json::Generate"
 
+    def prepare(mut self, mut helper: Helper) raises:
+        self.root = build_json_tree(self.n, helper)
+
     def run(mut self, iteration_id: Int, mut helper: Helper) raises:
-        self.text = generate_json_data(self.n, helper)
+        self.text = dumps(self.root)
 
         var prefix = '{"coordinates":'
         if self.text.startswith(prefix):
