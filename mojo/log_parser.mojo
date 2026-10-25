@@ -3,7 +3,7 @@ from helper import Helper
 from benchmark import Benchmark, Config
 
 
-struct LogParser(Benchmark, Movable):
+struct LogParser(Benchmark):
     var lines_count: Int
     var log: String
     var _checksum: UInt32

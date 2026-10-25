@@ -109,7 +109,7 @@ struct _GOLGrid(Movable):
         return hash
 
 
-struct GameOfLife(Benchmark, Movable):
+struct GameOfLife(Benchmark):
     var w: Int
     var h: Int
     var grid: _GOLGrid

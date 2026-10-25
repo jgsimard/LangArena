@@ -22,7 +22,7 @@ struct _Matrix:
         return {self.storage, row_major(self.n, self.n)}
 
 
-struct MatmulSingle(Benchmark, Movable):
+struct MatmulSingle(Benchmark):
     var n: Int
     var a: _Matrix
     var b: _Matrix
@@ -96,7 +96,7 @@ struct MatmulSingle(Benchmark, Movable):
         return c^
 
 
-struct MatmulParallel(Benchmark, Movable):
+struct MatmulParallel(Benchmark):
     var n: Int
     var a: _Matrix
     var b: _Matrix
@@ -163,7 +163,7 @@ struct MatmulParallel(Benchmark, Movable):
         return c^
 
 
-struct MatmulT4(Benchmark, Movable):
+struct MatmulT4(Benchmark):
     var impl: MatmulParallel
 
     def __init__(out self, config: Config) raises:
@@ -182,7 +182,7 @@ struct MatmulT4(Benchmark, Movable):
         return self.impl.checksum()
 
 
-struct MatmulT8(Benchmark, Movable):
+struct MatmulT8(Benchmark):
     var impl: MatmulParallel
 
     def __init__(out self, config: Config) raises:
@@ -201,7 +201,7 @@ struct MatmulT8(Benchmark, Movable):
         return self.impl.checksum()
 
 
-struct MatmulT16(Benchmark, Movable):
+struct MatmulT16(Benchmark):
     var impl: MatmulParallel
 
     def __init__(out self, config: Config) raises:

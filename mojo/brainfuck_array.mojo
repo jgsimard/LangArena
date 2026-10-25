@@ -38,7 +38,7 @@ struct _Tape:
             self.pos -= 1
 
 
-struct BrainfuckArray(Benchmark, Movable):
+struct BrainfuckArray(Benchmark):
     var program_text: String
     var warmup_text: String
     var result_val: UInt32

@@ -35,7 +35,7 @@ def generate_pair_strings(
     return pairs^
 
 
-struct DistanceJaro(Benchmark, Movable):
+struct DistanceJaro(Benchmark):
     var count: Int
     var size: Int
     var pairs: List[Tuple[String, String]]
@@ -113,7 +113,7 @@ struct DistanceJaro(Benchmark, Movable):
         ) / 3.0
 
 
-struct DistanceNGram(Benchmark, Movable):
+struct DistanceNGram(Benchmark):
     var count: Int
     var size: Int
     var pairs: List[Tuple[String, String]]

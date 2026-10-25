@@ -3,7 +3,7 @@ from helper import Helper
 from benchmark import Benchmark, Config
 
 
-struct TemplateRegex(Benchmark, Movable):
+struct TemplateRegex(Benchmark):
     var count: Int
     var text: String
     var rendered: String
@@ -123,7 +123,7 @@ struct TemplateRegex(Benchmark, Movable):
         return text
 
 
-struct TemplateParse(Benchmark, Movable):
+struct TemplateParse(Benchmark):
     var count: Int
     var text: String
     var rendered: String

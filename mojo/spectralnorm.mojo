@@ -3,7 +3,7 @@ from helper import Helper
 from benchmark import Benchmark, Config
 
 
-struct Spectralnorm(Benchmark, Movable):
+struct Spectralnorm(Benchmark):
     var size: Int
     var u: List[Float64]
     var v: List[Float64]

@@ -114,7 +114,7 @@ struct _BFProgram:
                     _BFProgram._execute(op.loop_ops, tape, result)
 
 
-struct BrainfuckRecursion(Benchmark, Movable):
+struct BrainfuckRecursion(Benchmark):
     var program_text: String
     var warmup_text: String
     var result_val: UInt32

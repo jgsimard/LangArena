@@ -239,7 +239,7 @@ struct _CalcParser(Movable):
         )
 
 
-struct CalculatorAst(Benchmark, Movable):
+struct CalculatorAst(Benchmark):
     var n: Int
     var text: String
     var parser: _CalcParser
@@ -338,7 +338,7 @@ struct CalculatorAst(Benchmark, Movable):
         return result
 
 
-struct CalculatorInterpreter(Benchmark, Movable):
+struct CalculatorInterpreter(Benchmark):
     var n: Int
     var parser: _CalcParser
     var result: UInt32

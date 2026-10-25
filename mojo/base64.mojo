@@ -3,7 +3,7 @@ from helper import Helper
 from benchmark import Benchmark, Config
 
 
-struct Base64Encode(Benchmark, Movable):
+struct Base64Encode(Benchmark):
     var n: Int
     var str: String
     var str2: String
@@ -51,7 +51,7 @@ struct Base64Encode(Benchmark, Movable):
         return Helper.checksum_string(desc)
 
 
-struct Base64Decode(Benchmark, Movable):
+struct Base64Decode(Benchmark):
     var n: Int
     var str2: String
     var str3: List[UInt8]

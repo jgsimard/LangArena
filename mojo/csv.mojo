@@ -14,7 +14,7 @@ struct CsvPoint(Copyable):
         self.z = z
 
 
-struct CsvParse(Benchmark, Movable):
+struct CsvParse(Benchmark):
     var rows: Int
     var _checksum: UInt32
     var data: String

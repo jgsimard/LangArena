@@ -24,7 +24,7 @@ struct BWTResult(Copyable):
         self.original_idx = original_idx
 
 
-struct BWTEncode(Benchmark, Movable):
+struct BWTEncode(Benchmark):
     var size: Int
     var result: UInt32
     var test_data: List[UInt8]
@@ -128,7 +128,7 @@ struct BWTEncode(Benchmark, Movable):
         return BWTResult(transformed^, original_idx)
 
 
-struct BWTDecode(Benchmark, Movable):
+struct BWTDecode(Benchmark):
     var size: Int
     var result: UInt32
     var test_data: List[UInt8]
@@ -386,7 +386,7 @@ def _huffman_decode(
     return result^
 
 
-struct HuffEncode(Benchmark, Movable):
+struct HuffEncode(Benchmark):
     var size: Int
     var result: UInt32
     var test_data: List[UInt8]
@@ -423,7 +423,7 @@ struct HuffEncode(Benchmark, Movable):
         return self.result
 
 
-struct HuffDecode(Benchmark, Movable):
+struct HuffDecode(Benchmark):
     var size: Int
     var result: UInt32
     var test_data: List[UInt8]
@@ -700,7 +700,7 @@ def _arith_decode_data(encoded: _ArithEncodedResult) -> List[UInt8]:
     return result^
 
 
-struct ArithEncode(Benchmark, Movable):
+struct ArithEncode(Benchmark):
     var size: Int
     var result: UInt32
     var test_data: List[UInt8]
@@ -726,7 +726,7 @@ struct ArithEncode(Benchmark, Movable):
         return self.result
 
 
-struct ArithDecode(Benchmark, Movable):
+struct ArithDecode(Benchmark):
     var size: Int
     var result: UInt32
     var test_data: List[UInt8]
@@ -778,7 +778,7 @@ struct _LZWResult(Copyable):
         self.dict_size = dict_size
 
 
-struct LZWEncode(Benchmark, Movable):
+struct LZWEncode(Benchmark):
     var size: Int
     var result: UInt32
     var test_data: List[UInt8]
@@ -840,7 +840,7 @@ struct LZWEncode(Benchmark, Movable):
         return _LZWResult(result^, next_code)
 
 
-struct LZWDecode(Benchmark, Movable):
+struct LZWDecode(Benchmark):
     var size: Int
     var result: UInt32
     var test_data: List[UInt8]

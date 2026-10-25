@@ -2,7 +2,7 @@ from helper import Helper
 from benchmark import Benchmark, Config
 
 
-struct HashSHA256(Benchmark, Movable):
+struct HashSHA256(Benchmark):
     var size: Int
     var data: List[UInt8]
     var result: UInt32
@@ -54,7 +54,7 @@ struct HashSHA256(Benchmark, Movable):
         return (b3 << 24) | (b2 << 16) | (b1 << 8) | b0
 
 
-struct HashCRC32(Benchmark, Movable):
+struct HashCRC32(Benchmark):
     var size: Int
     var data: List[UInt8]
     var result: UInt32

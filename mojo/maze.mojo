@@ -41,7 +41,7 @@ struct _MazeCell(Copyable):
             self.kind = MAZE_WALL
 
 
-struct AStarEntry(Comparable, Copyable, Movable):
+struct AStarEntry(Comparable, Copyable):
     var priority: Int
     var vertex: Int
 
@@ -58,7 +58,7 @@ struct AStarEntry(Comparable, Copyable, Movable):
         return self.priority == other.priority and self.vertex == other.vertex
 
 
-struct MazeGenerator(Benchmark, Movable):
+struct MazeGenerator(Benchmark):
     var w: Int
     var h: Int
     var cells: List[List[_MazeCell]]
@@ -221,7 +221,7 @@ struct MazeGenerator(Benchmark, Movable):
                 self._ensure_open_finish(ny, nx)
 
 
-struct MazeBFS(Benchmark, Movable):
+struct MazeBFS(Benchmark):
     var generator: MazeGenerator
     var result: UInt32
     var path: List[Tuple[Int, Int]]
@@ -320,7 +320,7 @@ struct MazeBFS(Benchmark, Movable):
         return List[Tuple[Int, Int]]()
 
 
-struct MazeAStar(Benchmark, Movable):
+struct MazeAStar(Benchmark):
     var generator: MazeGenerator
     var result: UInt32
     var path: List[Tuple[Int, Int]]

@@ -46,7 +46,7 @@ struct Coordinates(Movable):
     var coordinates: List[Coordinate]
 
 
-struct JsonGenerate(Benchmark, Movable):
+struct JsonGenerate(Benchmark):
     var n: Int
     var result: UInt32
     var text: String
@@ -70,7 +70,7 @@ struct JsonGenerate(Benchmark, Movable):
         return self.result
 
 
-struct JsonParseDom(Benchmark, Movable):
+struct JsonParseDom(Benchmark):
     var n: Int
     var text: String
     var result: UInt32
@@ -109,7 +109,7 @@ struct JsonParseDom(Benchmark, Movable):
         return self.result
 
 
-struct JsonParseMapping(Benchmark, Movable):
+struct JsonParseMapping(Benchmark):
     var n: Int
     var text: String
     var result: UInt32

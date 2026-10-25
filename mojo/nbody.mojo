@@ -34,7 +34,7 @@ struct _Planet(Copyable, ImplicitlyCopyable):
         self.mass = mass * SOLAR_MASS
 
 
-struct Nbody(Benchmark, Movable):
+struct Nbody(Benchmark):
     var bodies: List[_Planet]
     var v1: Float64
     var result: UInt32

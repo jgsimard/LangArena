@@ -3,7 +3,7 @@ from helper import Helper
 from benchmark import Benchmark, Config
 
 
-struct Sieve(Benchmark, Movable):
+struct Sieve(Benchmark):
     var limit: Int
     var checksum_: UInt32
 

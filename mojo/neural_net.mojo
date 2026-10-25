@@ -153,7 +153,7 @@ struct _NN(Movable):
         neuron.prev_threshold = temp_threshold
 
 
-struct NeuralNet(Benchmark, Movable):
+struct NeuralNet(Benchmark):
     var nn: _NN
     var input00: List[Float64]
     var input10: List[Float64]

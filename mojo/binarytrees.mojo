@@ -45,7 +45,7 @@ struct TreeNodeObj:
         return total
 
 
-struct BinarytreesObj(Benchmark, Movable):
+struct BinarytreesObj(Benchmark):
     var n: Int
     var result: UInt32
 
@@ -86,7 +86,7 @@ struct TreeNodeArena(Copyable, ImplicitlyCopyable):
         self.right = right
 
 
-struct BinarytreesArena(Benchmark, Movable):
+struct BinarytreesArena(Benchmark):
     var n: Int
     var result: UInt32
     var arena: List[TreeNodeArena]
