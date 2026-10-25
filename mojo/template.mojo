@@ -25,31 +25,23 @@ struct TemplateRegex(Benchmark):
     def prepare(mut self, mut helper: Helper) raises:
         self.vars = Dict[String, String]()
         Self._prepare_template(self.count, self.vars)
-        self.text = Self._build_text(self.count, self.vars)
+        self.text = Self._build_text(self.count)
 
     def run(mut self, iteration_id: Int, mut helper: Helper) raises:
-        var result = String(capacity_bytes=self.text.byte_length())
-        var text_len = self.text.byte_length()
-        var text = self.text[byte=0:text_len]
-        var last_pos = 0
+        var text = self.text[byte = 0 : self.text.byte_length()]
+        var rendered = String(capacity_bytes=text.byte_length())
+        var cursor = 0
 
         for found in finditer_span[Self._PATTERN](text):
-            var match_start = found.start()
-            var match_end = found.end()
+            rendered += text[byte = cursor : found.start()]
+            var key = String(found.group_span(text, 1).strip())
+            if key in self.vars:
+                rendered += self.vars[key]
+            cursor = found.end()
 
-            result += text[byte=last_pos:match_start]
-
-            var stripped = String(found.group_span(text, 1).strip())
-
-            if stripped in self.vars:
-                result += self.vars[stripped]
-
-            last_pos = match_end
-
-        result += text[byte=last_pos:text_len]
-
-        self.rendered = result^
-        self.checksum_val += UInt32(self.rendered.byte_length())
+        rendered += text[byte = cursor : text.byte_length()]
+        self.checksum_val += UInt32(rendered.byte_length())
+        self.rendered = rendered^
 
     def checksum(self) -> UInt32:
         return (
@@ -58,33 +50,36 @@ struct TemplateRegex(Benchmark):
 
     @staticmethod
     def _prepare_template(count: Int, mut vars: Dict[String, String]):
-        var first_names = List[String]()
-        first_names.append("John")
-        first_names.append("Jane")
-        first_names.append("Bob")
-        first_names.append("Alice")
-        first_names.append("Charlie")
-        first_names.append("Diana")
-        first_names.append("Sarah")
-        first_names.append("Mike")
+        var first_names = [
+            "John",
+            "Jane",
+            "Bob",
+            "Alice",
+            "Charlie",
+            "Diana",
+            "Sarah",
+            "Mike",
+        ]
 
-        var last_names = List[String]()
-        last_names.append("Smith")
-        last_names.append("Johnson")
-        last_names.append("Brown")
-        last_names.append("Taylor")
-        last_names.append("Wilson")
-        last_names.append("Davis")
-        last_names.append("Miller")
-        last_names.append("Jones")
+        var last_names = [
+            "Smith",
+            "Johnson",
+            "Brown",
+            "Taylor",
+            "Wilson",
+            "Davis",
+            "Miller",
+            "Jones",
+        ]
 
-        var cities = List[String]()
-        cities.append("New York")
-        cities.append("Los Angeles")
-        cities.append("Chicago")
-        cities.append("Houston")
-        cities.append("Phoenix")
-        cities.append("San Francisco")
+        var cities = [
+            "New York",
+            "Los Angeles",
+            "Chicago",
+            "Houston",
+            "Phoenix",
+            "San Francisco",
+        ]
 
         vars["TITLE"] = "Template title"
 
@@ -94,31 +89,25 @@ struct TemplateRegex(Benchmark):
             vars["CITY" + String(i)] = cities[i % len(cities)]
 
     @staticmethod
-    def _build_text(count: Int, vars: Dict[String, String]) -> String:
-        var lorem = (
+    def _build_text(count: Int) -> String:
+        var text = (
+            "<html><body><h1>{{TITLE}}</h1><p>"
             "Lorem {ipsum} dolor {sit} amet, consectetur adipiscing elit. Sed"
             " do eiusmod tempor incididunt ut labore {et} dolore magna aliqua. "
+            "</p><table>"
         )
-
-        var text = "<html><body>"
-        text += "<h1>{{TITLE}}</h1>"
-        text += "<p>"
-        text += lorem
-        text += "</p>"
-        text += "<table>"
 
         for i in range(count):
             if i % 3 == 0:
                 text += "<!-- {comment} -->"
-            text += "<tr>"
-            text += "<td>{{ FIRST_NAME" + String(i) + " }}</td>"
-            text += "<td>{{LAST_NAME" + String(i) + "}}</td>"
-            text += "<td>{{  CITY" + String(i) + "  }}</td>"
-            text += "<td>{balance: " + String(i % 100) + "}</td>"
-            text += "</tr>\n"
+            text += String(
+                t"<tr><td>{{{{ FIRST_NAME{i} }}}}</td>"
+                t"<td>{{{{LAST_NAME{i}}}}}</td>"
+                t"<td>{{{{  CITY{i}  }}}}</td>"
+                t"<td>{{balance: {i % 100}}}</td></tr>\n"
+            )
 
-        text += "</table>"
-        text += "</body></html>"
+        text += "</table></body></html>"
         return text
 
 
@@ -142,14 +131,13 @@ struct TemplateParse(Benchmark):
     def prepare(mut self, mut helper: Helper) raises:
         self.vars = Dict[String, String]()
         TemplateRegex._prepare_template(self.count, self.vars)
-        self.text = TemplateRegex._build_text(self.count, self.vars)
+        self.text = TemplateRegex._build_text(self.count)
 
     def run(mut self, iteration_id: Int, mut helper: Helper) raises:
-        var text = self.text
-        var text_len = text.byte_length()
-        var text_bytes = text.as_bytes()
+        var text_bytes = self.text.as_bytes()
+        var text_len = len(text_bytes)
 
-        var builder = String(capacity_bytes=text_len * 2)
+        var rendered = String(capacity_bytes=text_len)
 
         var i = 0
         var chunk_start = 0
@@ -161,7 +149,7 @@ struct TemplateParse(Benchmark):
                 and text_bytes[i + 1] == 123
             ):
                 if chunk_start < i:
-                    builder._iadd(text_bytes[chunk_start:i])
+                    rendered._iadd(text_bytes[chunk_start:i])
 
                 var key_start = i + 2
                 var j = key_start
@@ -177,9 +165,8 @@ struct TemplateParse(Benchmark):
                         ).strip()
                     )
 
-                    var val = self.vars.get(key)
-                    if val:
-                        builder._iadd(val[].as_bytes())
+                    if key in self.vars:
+                        rendered._iadd(self.vars[key].as_bytes())
 
                     i = j + 2
                     chunk_start = i
@@ -188,10 +175,10 @@ struct TemplateParse(Benchmark):
             i += 1
 
         if chunk_start < text_len:
-            builder._iadd(text_bytes[chunk_start:text_len])
+            rendered._iadd(text_bytes[chunk_start:text_len])
 
-        self.rendered = builder
-        self.checksum_val += UInt32(self.rendered.byte_length())
+        self.checksum_val += UInt32(rendered.byte_length())
+        self.rendered = rendered^
 
     def checksum(self) -> UInt32:
         return (
