@@ -1,20 +1,39 @@
 from max.algorithm.backend.cpu import parallelize
+from layout import TileTensor, row_major
 from helper import Helper
 from benchmark import Benchmark, Config
 
 
+struct _Matrix:
+    var storage: List[Float64]
+    var n: Int
+
+    def __init__(out self, n: Int = 0):
+        self.storage = List[Float64](unsafe_uninit_length=n * n)
+        self.n = n
+
+    def tensor(
+        ref self,
+    ) -> TileTensor[
+        DType.float64,
+        type_of(row_major(Int(0), Int(0))),
+        origin_of(self.storage),
+    ]:
+        return {self.storage, row_major(self.n, self.n)}
+
+
 struct MatmulSingle(Benchmark, Movable):
     var n: Int
-    var a: List[List[Float64]]
-    var b: List[List[Float64]]
+    var a: _Matrix
+    var b: _Matrix
     var result: UInt32
 
     def __init__(out self, config: Config) raises:
         self.n = config.get_i64("Matmul::Single", "n")
         if self.n == 0:
             self.n = 100
-        self.a = List[List[Float64]]()
-        self.b = List[List[Float64]]()
+        self.a = _Matrix()
+        self.b = _Matrix()
         self.result = 0
 
     def class_name(self) -> String:
@@ -27,7 +46,8 @@ struct MatmulSingle(Benchmark, Movable):
 
     def run(mut self, iteration_id: Int, mut helper: Helper) raises:
         var c = Self._matmul_sequential(self.a, self.b, self.n)
-        var center_value = c[self.n >> 1][self.n >> 1]
+        var output = c.tensor()
+        var center_value = output[self.n >> 1, self.n >> 1]
 
         self.result += Helper.checksum_f64(center_value)
 
@@ -35,57 +55,51 @@ struct MatmulSingle(Benchmark, Movable):
         return self.result
 
     @staticmethod
-    def _matgen(n: Int) -> List[List[Float64]]:
+    def _matgen(n: Int) -> _Matrix:
         var tmp = 1.0 / Float64(n) / Float64(n)
-        var a = List[List[Float64]](capacity=n)
+        var a = _Matrix(n)
+        var tensor = a.tensor()
 
         for i in range(n):
-            var row = List[Float64](unsafe_uninit_length=n)
             for j in range(n):
-                row[j] = tmp * Float64(i - j) * Float64(i + j)
-            a.append(row^)
+                tensor[i, j] = tmp * Float64(i - j) * Float64(i + j)
 
         return a^
 
     @staticmethod
-    def _transpose(b: List[List[Float64]], n: Int) -> List[List[Float64]]:
-        var b_t = List[List[Float64]](capacity=n)
+    def _transpose(b: _Matrix, n: Int) -> _Matrix:
+        var source = b.tensor()
+        var b_t = _Matrix(n)
+        var output = b_t.tensor()
         for j in range(n):
-            var row = List[Float64](unsafe_uninit_length=n)
             for i in range(n):
-                row[i] = b[i][j]
-            b_t.append(row^)
+                output[j, i] = source[i, j]
         return b_t^
 
     @staticmethod
-    def _matmul_sequential(
-        a: List[List[Float64]], b: List[List[Float64]], n: Int
-    ) -> List[List[Float64]]:
+    def _matmul_sequential(a: _Matrix, b: _Matrix, n: Int) -> _Matrix:
         var b_t = MatmulSingle._transpose(b, n)
-        var c = List[List[Float64]](capacity=n)
+        var c = _Matrix(n)
+        var input_a = a.tensor()
+        var input_b = b_t.tensor()
+        var output = c.tensor()
 
         for i in range(n):
-            var row = List[Float64](unsafe_uninit_length=n)
-            ref ai = a[i]
-
             for j in range(n):
                 var s: Float64 = 0.0
-                ref b_tj = b_t[j]
 
                 for k in range(n):
-                    s += ai[k] * b_tj[k]
+                    s += input_a[i, k] * input_b[j, k]
 
-                row[j] = s
-
-            c.append(row^)
+                output[i, j] = s
 
         return c^
 
 
 struct MatmulParallel(Benchmark, Movable):
     var n: Int
-    var a: List[List[Float64]]
-    var b: List[List[Float64]]
+    var a: _Matrix
+    var b: _Matrix
     var result: UInt32
     var num_threads: Int
     var config_name: String
@@ -98,8 +112,8 @@ struct MatmulParallel(Benchmark, Movable):
         self.n = config.get_i64(config_name, "n")
         if self.n == 0:
             self.n = 100
-        self.a = List[List[Float64]]()
-        self.b = List[List[Float64]]()
+        self.a = _Matrix()
+        self.b = _Matrix()
         self.result = 0
 
     def class_name(self) -> String:
@@ -112,7 +126,8 @@ struct MatmulParallel(Benchmark, Movable):
 
     def run(mut self, iteration_id: Int, mut helper: Helper) raises:
         var c = Self._matmul_parallel(self.a, self.b, self.n, self.num_threads)
-        var center_value = c[self.n >> 1][self.n >> 1]
+        var output = c.tensor()
+        var center_value = output[self.n >> 1, self.n >> 1]
 
         self.result += Helper.checksum_f64(center_value)
 
@@ -121,32 +136,28 @@ struct MatmulParallel(Benchmark, Movable):
 
     @staticmethod
     def _matmul_parallel(
-        a: List[List[Float64]], b: List[List[Float64]], n: Int, num_threads: Int
-    ) -> List[List[Float64]]:
+        a: _Matrix, b: _Matrix, n: Int, num_threads: Int
+    ) -> _Matrix:
         var b_t = MatmulSingle._transpose(b, n)
-        var c = List[List[Float64]](capacity=n)
-
-        for _ in range(n):
-            var row = List[Float64](unsafe_uninit_length=n)
-            c.append(row^)
+        var c = _Matrix(n)
+        var input_a = a.tensor()
+        var input_b = b_t.tensor()
+        var output = c.tensor()
 
         var rows_per_worker = (n + num_threads - 1) // num_threads
 
         def compute_row(
             worker_id: Int,
-        ) {imm a, imm b_t, mut c, imm n, imm rows_per_worker}:
+        ) {imm input_a, imm input_b, mut output, imm n, imm rows_per_worker}:
             var start_row = worker_id * rows_per_worker
             var end_row = min(start_row + rows_per_worker, n)
 
             for i in range(start_row, end_row):
-                ref ai = a[i]
-                ref ci = c[i]
                 for j in range(n):
                     var s: Float64 = 0.0
-                    ref b_tj = b_t[j]
                     for k in range(n):
-                        s += ai[k] * b_tj[k]
-                    ci[j] = s
+                        s += input_a[i, k] * input_b[j, k]
+                    output[i, j] = s
 
         parallelize(compute_row, num_threads)
         return c^
