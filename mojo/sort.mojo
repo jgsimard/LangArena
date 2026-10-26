@@ -16,9 +16,7 @@ def _quick_sort(mut arr: List[Int], low: Int, high: Int):
         while arr[j] > pivot:
             j -= 1
         if i <= j:
-            var tmp = arr[i]
-            arr[i] = arr[j]
-            arr[j] = tmp
+            arr.swap_elements(i, j)
             i += 1
             j -= 1
 

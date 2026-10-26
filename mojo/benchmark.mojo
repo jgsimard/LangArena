@@ -24,8 +24,7 @@ struct Config(Copyable):
     def _get_field(
         self, class_name: String, field_name: String
     ) raises -> Value:
-        for i in range(len(self.entries)):
-            ref entry = self.entries[i]
+        for entry in self.entries:
             if entry.name == class_name:
                 if field_name in entry.fields:
                     return entry.fields[field_name]
