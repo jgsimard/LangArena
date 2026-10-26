@@ -6,7 +6,7 @@ struct _Graph(Movable):
     var vertices: Int
     var adj: List[List[Int]]
 
-    def __init__(out self, vertices: Int, jumps: Int, jump_len: Int):
+    def __init__(out self, vertices: Int):
         self.vertices = vertices
         self.adj = List[List[Int]]()
         for _ in range(vertices):
@@ -58,7 +58,7 @@ struct GraphBFS(Benchmark):
         var vertices = config.get_i64("Graph::BFS", "vertices")
         self.jumps = config.get_i64("Graph::BFS", "jumps")
         self.jump_len = config.get_i64("Graph::BFS", "jump_len")
-        self.graph = _Graph(vertices, self.jumps, self.jump_len)
+        self.graph = _Graph(vertices)
         self.result = 0
 
     def class_name(self) -> String:
@@ -113,7 +113,7 @@ struct GraphDFS(Benchmark):
         var vertices = config.get_i64("Graph::DFS", "vertices")
         self.jumps = config.get_i64("Graph::DFS", "jumps")
         self.jump_len = config.get_i64("Graph::DFS", "jump_len")
-        self.graph = _Graph(vertices, self.jumps, self.jump_len)
+        self.graph = _Graph(vertices)
         self.result = 0
 
     def class_name(self) -> String:
@@ -141,9 +141,7 @@ struct GraphDFS(Benchmark):
         var best_path = 2147483647
 
         while len(stack) > 0:
-            var last = len(stack) - 1
-            var cur = stack[last]
-            _ = stack.pop()
+            var cur = stack.pop()
             var v = cur[0]
             var dist = cur[1]
 
@@ -173,7 +171,7 @@ struct GraphAStar(Benchmark):
         var vertices = config.get_i64("Graph::AStar", "vertices")
         self.jumps = config.get_i64("Graph::AStar", "jumps")
         self.jump_len = config.get_i64("Graph::AStar", "jump_len")
-        self.graph = _Graph(vertices, self.jumps, self.jump_len)
+        self.graph = _Graph(vertices)
         self.result = 0
 
     def class_name(self) -> String:

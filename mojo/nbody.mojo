@@ -1,12 +1,12 @@
-from std.math import sqrt
+from std.math import sqrt, pi
 from helper import Helper
 from benchmark import Benchmark, Config
 
-comptime SOLAR_MASS = 4.0 * 3.141592653589793 * 3.141592653589793
+comptime SOLAR_MASS = 4.0 * pi * pi
 comptime DAYS_PER_YEAR = 365.24
 
 
-struct _Planet(Copyable, ImplicitlyCopyable):
+struct _Planet(TrivialRegisterPassable):
     var x: Float64
     var y: Float64
     var z: Float64

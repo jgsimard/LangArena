@@ -30,12 +30,6 @@ struct _MazeCell(Copyable):
             or self.kind == MAZE_FINISH
         )
 
-    def is_wall(self) -> Bool:
-        return self.kind == MAZE_WALL
-
-    def is_space(self) -> Bool:
-        return self.kind == MAZE_SPACE
-
     def reset(mut self):
         if self.kind == MAZE_SPACE:
             self.kind = MAZE_WALL
@@ -109,8 +103,6 @@ struct MazeGenerator(Benchmark):
                 if x == 0 or y == 0 or x == self.w - 1 or y == self.h - 1:
                     cell.kind = MAZE_BORDER
                 else:
-                    cell.neighbor_count = 0
-
                     cell.neighbors[0] = (y - 1, x)
                     cell.neighbors[1] = (y + 1, x)
                     cell.neighbors[2] = (y, x + 1)
