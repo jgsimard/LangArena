@@ -518,7 +518,7 @@ struct _ArithEncodedResult(Copyable):
         self.frequencies = frequencies^
 
 
-struct _BitOutputStream(Movable):
+struct _BitOutputStream:
     var buffer: UInt8
     var bit_pos: Int
     var bytes: List[UInt8]
@@ -549,7 +549,7 @@ struct _BitOutputStream(Movable):
         return result^
 
 
-struct _BitInputStream[origin: Origin](Movable):
+struct _BitInputStream[origin: Origin]:
     var bytes: Span[UInt8, Self.origin]
     var byte_pos: Int
     var bit_pos: Int

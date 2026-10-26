@@ -29,7 +29,7 @@ comptime CALC_BINARY = 2
 comptime CALC_ASSIGN = 3
 
 
-struct _CalcNode(Movable):
+struct _CalcNode:
     comptime _NodePointer = Optional[Pointer[_CalcNode, MutUntrackedOrigin]]
 
     var kind: Int
@@ -58,7 +58,7 @@ struct _CalcNode(Movable):
             nn.unsafe_free()
 
 
-struct _CalcParser(Movable):
+struct _CalcParser:
     var input: String
     var pos: Int
     var length: Int

@@ -2,7 +2,7 @@ from helper import Helper
 from benchmark import Benchmark, Config
 
 
-struct _Graph(Movable):
+struct _Graph:
     var vertices: Int
     var adj: List[List[Int]]
 
