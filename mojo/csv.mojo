@@ -2,16 +2,11 @@ from mojo_csv import CsvReader
 from helper import Helper
 from benchmark import Benchmark, Config
 
-
+@fieldwise_init
 struct CsvPoint(Copyable):
     var x: Float64
     var y: Float64
     var z: Float64
-
-    def __init__(out self, x: Float64, y: Float64, z: Float64):
-        self.x = x
-        self.y = y
-        self.z = z
 
 
 struct CsvParse(Benchmark):

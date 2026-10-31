@@ -47,7 +47,7 @@ struct DistanceJaro(Benchmark):
         for pair in self.pairs:
             self.result += UInt32(Self.jaro(pair[0], pair[1]) * 1000)
 
-    def checksum(mut self) -> UInt32:
+    def checksum(self) -> UInt32:
         return self.result
 
     @staticmethod
